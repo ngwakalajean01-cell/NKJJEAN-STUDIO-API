@@ -70,3 +70,32 @@ Cette préparation n'autorise pas :
 - lancer une facturation récurrente.
 
 Il faudra présenter au propriétaire l'offre exacte (fournisseur, machine, tarif horaire, stockage, réseau, taxes, coût mensuel estimé, politique d'arrêt et de suppression), puis obtenir son accord final explicite avant de poursuivre.
+
+
+## Vérification technique et tarifaire du 30 octobre 2026
+
+### Connexion privée Cloudflare
+
+La documentation Cloudflare Workers VPC consultée le 30 octobre 2026 indique que Workers VPC peut relier un Worker à des services privés hébergés dans un autre cloud au moyen d'un Cloudflare Tunnel et de VPC Services. La documentation indique une disponibilité sur les plans Free et Paid, mais le produit reste en bêta. Il faut donc vérifier les droits du compte, les rôles Connectivity Directory, les limites et les éventuels changements avant de configurer la liaison. Cette piste est plus précise qu'un simple endpoint public ou qu'un Service Binding seul : le Worker doit disposer du binding VPC documenté pour le service privé ciblé.
+
+Références :
+- https://developers.cloudflare.com/workers-vpc/
+- https://developers.cloudflare.com/workers-vpc/configuration/vpc-services/
+
+### Prix observés pour RTX 3090
+
+Les comparateurs consultés le 30 octobre 2026 affichent des écarts importants selon l'hôte et la configuration : une offre plancher observée à 0,121 USD/GPU-heure, d'autres relevés autour de 0,15 à 0,20 USD/heure, et des offres plus élevées. À 730 heures :
+- 0,121 USD/h = 88,33 USD/mois pour le GPU seul ;
+- 0,150 USD/h = 109,50 USD/mois pour le GPU seul ;
+- 0,198 USD/h = 144,54 USD/mois pour le GPU seul.
+
+Références indicatives, non contractuelles :
+- https://studiotvai.com/gpu-price/rtx-3090
+- https://gpuledger.dev/gpus/nvidia-rtx-3090/
+- https://cloud.vast.ai/create/?gpuModelNames=rtx3090
+
+Conclusion budgétaire : le plafond de 150 USD/mois n'est pas garanti par la seule présence d'offres à bas prix. À 0,15 USD/h, il ne reste que 40,50 USD pour stockage, bande passante, taxes et frais. À 0,198 USD/h, le GPU seul dépasse pratiquement le budget. Il faut donc retenir uniquement une offre dont le coût total vérifié reste sous le plafond, avec alertes et arrêt manuel/automatique de sécurité. Les offres de marketplace peuvent disparaître et la disponibilité continue n'est pas garantie.
+
+### Distinction des moteurs
+
+Le modèle conversationnel et le modèle de génération d'images seront déployés et supervisés séparément. Le premier test sur RTX 3090 doit mesurer la VRAM réellement consommée, le débit, la latence, la qualité en français et le comportement après redémarrage. Le moteur image doit faire l'objet d'un test indépendant, notamment sur le respect du texte, des coordonnées, des logos et des photos de référence. Aucun choix de modèle ne sera déclaré validé avant vérification de licence et essai réel sur la machine cible.
