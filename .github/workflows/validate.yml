@@ -5,6 +5,7 @@ on:
     branches:
       - main
       - codex/nkjjean-studio-platform
+      - prepare/nkjjean-ai-rtx3090
   pull_request:
     branches:
       - main
@@ -21,16 +22,24 @@ jobs:
         with:
           node-version: "22"
 
-      - name: Vérifier la syntaxe du Worker
+      - name: Vérifier la syntaxe du Worker principal
         run: |
           cp Index.ts /tmp/nkjjean-worker.js
           node --check /tmp/nkjjean-worker.js
+
+      - name: Vérifier la syntaxe du runtime IA
+        run: |
+          cp ai-runtime/Index.ts /tmp/nkjjean-ai-runtime.js
+          node --check /tmp/nkjjean-ai-runtime.js
 
       - name: Tester le hachage des mots de passe et les anciens comptes
         run: node tests/auth-password.test.cjs
 
       - name: Vérifier la passerelle IA propriétaire et les routes clientes
         run: node tests/studio-ai.test.cjs
+
+      - name: Tester le runtime GPU auto-hébergé
+        run: node tests/ai-runtime.test.cjs
 
       - name: Vérifier la migration D1 avec SQLite
         run: |
