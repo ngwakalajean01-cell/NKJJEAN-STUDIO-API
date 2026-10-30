@@ -569,7 +569,7 @@ async function studioHandleApi(request, env, url) {
     if(parts.length===4&&parts[2]==="apps"&&request.method==="POST"){
       const appId=parts[3],body=await studioReadBody(request),decision=studioText(body.decision,20),comment=studioText(body.comment||"",2000);
       if(!["approved","rejected","suspended"].includes(decision))return jsonResponse({error:"Décision invalide."},400);
-      const app=await env.DB.prepare("SELECT id,status FROM published_apps WHERE id=? LIMIT 1").bind(appId).first();
+      const app=await env.DB.prepare("SELECT id,slug,status FROM published_apps WHERE id=? LIMIT 1").bind(appId).first();
       if(!app)return jsonResponse({error:"Application introuvable."},404);
       if(decision==="approved"&&app.status!=="pending_review")return jsonResponse({error:"Seules les fiches en attente peuvent être approuvées."},409);
       const now=new Date().toISOString();
@@ -577,7 +577,7 @@ async function studioHandleApi(request, env, url) {
         env.DB.prepare("UPDATE published_apps SET status=?,rejection_reason=?,published_at=CASE WHEN ?='approved' THEN ? ELSE published_at END,updated_at=? WHERE id=?").bind(decision,decision==="approved"?null:comment,decision,now,now,appId),
         env.DB.prepare("INSERT INTO app_publication_reviews (id,app_id,version_id,reviewed_by,decision,comment) VALUES (?,?,NULL,?,?,?)").bind(randomHex(16),appId,user.id,decision,comment)
       ]);
-      return jsonResponse({success:true,status:decision,message:decision==="approved"?"La fiche de présentation est maintenant publique.":"La décision administrative a été enregistrée."});
+      return jsonResponse({success:true,status:decision,public_url:decision==="approved"?"/applications/"+encodeURIComponent(app.slug):null,message:decision==="approved"?"La fiche de présentation est maintenant publique.":"La décision administrative a été enregistrée."});
     }
   }
 
