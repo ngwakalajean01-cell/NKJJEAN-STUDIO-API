@@ -16,7 +16,8 @@ Worker API et espace web de la plateforme NKJJEAN STUDIO.
 - `/` : page d'accueil en français
 - `/docs` : présentation des services et limites actuelles
 - `/app` : inscription, connexion et espace personnel
-- `/applications` : catalogue public des applications validées
+- `/studio/:projectId` : espace de travail privé d'un projet (conversations sauvegardées, quotas, clés API et activité)
+- `/applications` : catalogue public des fiches de présentation validées
 
 ## Authentification
 
@@ -49,22 +50,33 @@ Une clé API complète est affichée une seule fois au moment de sa création. S
 
 Ces routes fournissent l'identification du projet et le suivi des usages. Elles ne constituent pas encore un moteur IA.
 
-## Espaces de conversation par projet
+## Studio et espaces de travail par projet
 
+Chaque projet dispose d'un bouton **Ouvrir le Studio**. L'espace privé propose :
+- un tableau du projet et ses quotas ;
+- la création et la consultation de conversations ;
+- l'enregistrement des consignes et messages dans D1 ;
+- la consultation et la révocation des clés API ;
+- l'historique des utilisations API.
+
+Routes :
 - `GET, POST /api/projects/:id/conversations`
 - `GET, POST /api/conversations/:conversationId`
 
-La migration `migrations/0002_project_workspace.sql` doit être exécutée dans la console SQL D1 avant d'utiliser ces routes. Elle crée deux tables et trois index, sans supprimer les tables existantes.
+La migration `migrations/0002_project_workspace.sql` crée les tables de conversations et de messages. Le contrôle de santé du service doit afficher `conversation_tables_ready: true`.
 
-Les messages envoyés sont enregistrés. Aucune réponse IA automatique n'est générée dans cette version.
+**Limite actuelle :** le modèle IA propriétaire n'est pas encore entraîné ni hébergé. Le Studio sauvegarde le travail, mais ne génère pas encore de réponses IA. Aucun service IA externe n'est appelé.
 
-## Publication des applications
+## Publication publique des applications
 
-- `GET, POST /api/publisher` : consulter et créer les fiches
+- `GET, POST /api/publisher` : consulter et créer les fiches de présentation
 - `PATCH, DELETE /api/publisher/:appId` : modifier ou supprimer une fiche encore modifiable
-- `GET /api/publisher/:appId/versions` : consulter les versions déjà enregistrées
-- `GET /api/store/apps` : catalogue public des fiches publiées et disposant d'une version approuvée
-- `GET /api/store/apps/:slug` : consulter une fiche publiée
+- `POST /api/publisher/:appId/submit` : transmettre une fiche brouillon à l'administration
+- `GET /api/publisher/:appId/versions` : consulter les versions enregistrées
+- `GET /api/store/apps` : catalogue public des fiches approuvées
+- `GET /api/store/apps/:slug` : page publique partageable
+
+Une fiche n'est visible par tous qu'après approbation par un administrateur. Son adresse publique est `https://<domaine-worker>/applications/<slug>` et elle peut être copiée depuis l'espace personnel. Cette publication correspond à une page de présentation dans Chrome ; elle ne fournit pas de téléchargement APK tant que le stockage privé R2 n'est pas activé.
 
 Administration :
 - `GET /api/admin/overview`
