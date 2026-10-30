@@ -1,0 +1,35 @@
+# À utiliser uniquement sur une machine GPU dédiée après validation du modèle.
+# Ne pas exposer le port 8080 directement à Internet sans pare-feu et authentification.
+services:
+  nkjjean-model:
+    image: ghcr.io/ggml-org/llama.cpp:server-cuda
+    container_name: nkjjean-model
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8080:8080"
+    volumes:
+      - ./models:/models:ro
+    environment:
+      MODEL_FILE: /models/REPLACE_WITH_APPROVED_GGUF_MODEL.gguf
+    command:
+      - --model
+      - /models/REPLACE_WITH_APPROVED_GGUF_MODEL.gguf
+      - --host
+      - 0.0.0.0
+      - --port
+      - "8080"
+      - --n-gpu-layers
+      - "99"
+      - --ctx-size
+      - "8192"
+      - --parallel
+      - "1"
+      - --api-key
+      - ${GPU_API_TOKEN:?Set GPU_API_TOKEN in the host environment}
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
