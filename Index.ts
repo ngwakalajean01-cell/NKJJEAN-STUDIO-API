@@ -227,7 +227,7 @@ async function studioWorkspaceReady(env) {
 
 // Vérifie les colonnes nécessaires sans exposer de données personnelles.
 async function studioHasColumns(env, table, requiredColumns) {
-  const allowedTables = new Set(["users", "user_sessions", "published_apps", "app_versions"]);
+  const allowedTables = new Set(["users", "user_sessions", "published_apps", "app_versions", "published_resources", "resource_files", "app_release_files"]);
   if (!env.DB || !allowedTables.has(table)) return false;
   try {
     const result = await env.DB.prepare(`PRAGMA table_info(${table})`).all();
@@ -439,6 +439,68 @@ async function studioHandleApi(request, env, url) {
     return jsonResponse({ error:"Route publique introuvable." },404);
   }
 
+
+  // Catalogue public unifié : applications, cours et autres contenus.
+  if (path === "/api/store/catalog" && request.method === "GET") {
+    const q = studioText(url.searchParams.get("q") || "", 100);
+    const type = ["application","course","content"].includes(url.searchParams.get("type")) ? url.searchParams.get("type") : "all";
+    const category = studioText(url.searchParams.get("category") || "", 80);
+    const limit = Math.max(1,Math.min(60,Number(url.searchParams.get("limit"))||24));
+    const offset = Math.max(0,Math.min(10000,Number(url.searchParams.get("offset"))||0));
+    const query = "SELECT * FROM ("+
+      "SELECT id,'application' AS type,name AS title,slug,description,category,published_at FROM published_apps WHERE status='published' "+
+      "UNION ALL SELECT id,resource_type AS type,title,slug,description,category,published_at FROM published_resources WHERE status='published'"+
+      ") WHERE (?='' OR lower(title) LIKE '%'||lower(?)||'%' OR lower(description) LIKE '%'||lower(?)||'%' OR lower(category) LIKE '%'||lower(?)||'%') "+
+      "AND (?='all' OR type=?) AND (?='' OR lower(category)=lower(?)) ORDER BY published_at DESC LIMIT ? OFFSET ?";
+    const rows = await env.DB.prepare(query).bind(q,q,q,q,type,type,category,category,limit,offset).all();
+    const stats = await Promise.all([
+      env.DB.prepare("SELECT COUNT(*) AS n FROM published_apps WHERE status='published'").first(),
+      env.DB.prepare("SELECT COUNT(*) AS n FROM published_resources WHERE status='published' AND resource_type='course'").first(),
+      env.DB.prepare("SELECT COUNT(*) AS n FROM published_resources WHERE status='published' AND resource_type='content'").first()
+    ]);
+    const countRow = await env.DB.prepare("SELECT COUNT(*) AS n FROM ("+
+      "SELECT id,'application' AS type,name AS title,slug,description,category,published_at FROM published_apps WHERE status='published' "+
+      "UNION ALL SELECT id,resource_type AS type,title,slug,description,category,published_at FROM published_resources WHERE status='published'"+
+      ") WHERE (?='' OR lower(title) LIKE '%'||lower(?)||'%' OR lower(description) LIKE '%'||lower(?)||'%' OR lower(category) LIKE '%'||lower(?)||'%') "+
+      "AND (?='all' OR type=?) AND (?='' OR lower(category)=lower(?))").bind(q,q,q,q,type,type,category,category).first();
+    return jsonResponse({success:true,items:rows.results||[],total:Number(countRow&&countRow.n||0),limit,offset,counts:{
+      applications:Number(stats[0]&&stats[0].n||0),courses:Number(stats[1]&&stats[1].n||0),
+      contents:Number(stats[2]&&stats[2].n||0),publications:Number(stats.reduce((n,x)=>n+Number(x&&x.n||0),0))
+    }});
+  }
+
+  if (path.startsWith("/api/store/resources/") && request.method === "GET") {
+    const slug = decodeURIComponent(path.slice("/api/store/resources/".length));
+    const resource = await env.DB.prepare("SELECT id,resource_type AS type,title,slug,description,category,published_at FROM published_resources WHERE slug=? AND status='published' LIMIT 1").bind(slug).first();
+    if (!resource) return jsonResponse({error:"Cours ou contenu introuvable ou non publié."},404);
+    const files = await env.DB.prepare("SELECT id,file_name,mime_type,file_size,created_at FROM resource_files WHERE resource_id=? AND status='approved' ORDER BY created_at DESC").bind(resource.id).all();
+    return jsonResponse({success:true,resource,files:(files.results||[]).map(x=>({...x,download_url:"/api/download/resource/"+encodeURIComponent(x.id)}))});
+  }
+
+  if (path.startsWith("/api/download/") && request.method === "GET") {
+    if (!env.APP_FILES || typeof env.APP_FILES.get !== "function") return jsonResponse({error:"Le stockage sécurisé des fichiers n'est pas encore configuré.",code:"PRIVATE_STORAGE_NOT_CONFIGURED"},503);
+    const parts = path.split("/").filter(Boolean);
+    if (parts.length !== 4 || !["app","resource"].includes(parts[2])) return jsonResponse({error:"Lien de téléchargement invalide."},404);
+    const fileId = parts[3];
+    let file = null;
+    if (parts[2] === "resource") {
+      file = await env.DB.prepare("SELECT f.object_key,f.file_name,f.mime_type,f.file_size FROM resource_files f JOIN published_resources r ON r.id=f.resource_id WHERE f.id=? AND f.status='approved' AND r.status='published' LIMIT 1").bind(fileId).first();
+    } else {
+      file = await env.DB.prepare("SELECT f.object_key,f.file_name,f.mime_type,f.file_size FROM app_release_files f JOIN published_apps a ON a.id=f.app_id WHERE f.id=? AND f.status='approved' AND a.status='published' LIMIT 1").bind(fileId).first();
+    }
+    if (!file) return jsonResponse({error:"Fichier introuvable ou non publié."},404);
+    const object = await env.APP_FILES.get(file.object_key);
+    if (!object) return jsonResponse({error:"Le fichier n'est plus disponible dans le stockage."},404);
+    const safeName = String(file.file_name||"telechargement").replace(/[\\r\\n"]/g,"_");
+    return new Response(object.body,{status:200,headers:{
+      "Content-Type":file.mime_type||"application/octet-stream",
+      "Content-Length":String(file.file_size||object.size||0),
+      "Content-Disposition":"attachment; filename*=UTF-8''"+encodeURIComponent(safeName),
+      "Cache-Control":"private, no-store",
+      "X-Content-Type-Options":"nosniff"
+    }});
+  }
+
   // API de suivi d'utilisation destinée aux applications clientes.
   if (path === "/v1/project" && request.method === "GET") {
     const key = await studioApiKey(request,env);
@@ -618,6 +680,64 @@ async function studioHandleApi(request, env, url) {
     }
   }
 
+
+  // Soumission des cours et autres contenus.
+  if (path === "/api/resources" && request.method === "GET") {
+    const r = await env.DB.prepare("SELECT id,resource_type AS type,title,slug,description,category,status,rejection_reason,created_at,updated_at,published_at FROM published_resources WHERE user_id=? ORDER BY created_at DESC").bind(user.id).all();
+    return jsonResponse({success:true,resources:r.results||[]});
+  }
+  if (path === "/api/resources" && request.method === "POST") {
+    const body=await studioReadBody(request),type=body.type==="course"?"course":body.type==="content"?"content":"";
+    const title=studioText(body.title,140),description=studioText(body.description,8000),category=studioText(body.category||"Autres",100),slug=studioSlug(body.slug||title);
+    if(!type||title.length<2||slug.length<2)return jsonResponse({error:"Type, titre ou adresse publique invalide."},400);
+    const id=randomHex(16);
+    try{
+      await env.DB.prepare("INSERT INTO published_resources (id,user_id,resource_type,title,slug,description,category,status) VALUES (?,?,?,?,?,?,?,'draft')").bind(id,user.id,type,title,slug,description,category).run();
+      return jsonResponse({success:true,resource:{id,type,title,slug,status:"draft"}},201);
+    }catch(error){return jsonResponse({error:"Impossible de créer cette fiche. Son adresse existe peut-être déjà."},409);}
+  }
+  if(parts[0]==="api"&&parts[1]==="resources"&&parts.length>=3){
+    const resourceId=parts[2];
+    const resource=await env.DB.prepare("SELECT id,user_id,resource_type,title,slug,description,category,status FROM published_resources WHERE id=? AND user_id=? LIMIT 1").bind(resourceId,user.id).first();
+    if(!resource)return jsonResponse({error:"Ressource introuvable ou accès refusé."},404);
+    if(parts.length===3&&request.method==="PATCH"){
+      if(!["draft","rejected"].includes(resource.status))return jsonResponse({error:"Cette ressource ne peut plus être modifiée dans son état actuel."},409);
+      const body=await studioReadBody(request),title=body.title===undefined?resource.title:studioText(body.title,140),description=body.description===undefined?resource.description:studioText(body.description,8000),category=body.category===undefined?resource.category:studioText(body.category,100),slug=body.slug===undefined?resource.slug:studioSlug(body.slug);
+      if(title.length<2||slug.length<2)return jsonResponse({error:"Titre ou adresse publique invalide."},400);
+      try{await env.DB.prepare("UPDATE published_resources SET title=?,slug=?,description=?,category=?,status='draft',rejection_reason=NULL,updated_at=? WHERE id=? AND user_id=?").bind(title,slug,description,category,new Date().toISOString(),resourceId,user.id).run();return jsonResponse({success:true,status:"draft"});}
+      catch(error){return jsonResponse({error:"Cette adresse publique est déjà utilisée."},409);}
+    }
+    if(parts.length===4&&parts[3]==="files"&&request.method==="POST"){
+      if(!["draft","rejected"].includes(resource.status))return jsonResponse({error:"Ajoute les fichiers avant de soumettre la ressource."},409);
+      if(!env.APP_FILES||typeof env.APP_FILES.put!=="function")return jsonResponse({error:"Le stockage sécurisé des fichiers n'est pas configuré.",code:"PRIVATE_STORAGE_NOT_CONFIGURED"},503);
+      const form=await request.formData(),file=form.get("file");
+      if(!file||typeof file.arrayBuffer!=="function")return jsonResponse({error:"Sélectionne un fichier à envoyer."},400);
+      if(file.size<1||file.size>50*1024*1024)return jsonResponse({error:"Le fichier doit peser au maximum 50 Mo."},413);
+      const allowed=new Set(["application/pdf","application/zip","application/vnd.openxmlformats-officedocument.wordprocessingml.document","application/vnd.openxmlformats-officedocument.presentationml.presentation","video/mp4","image/jpeg","image/png"]);
+      const mime=String(file.type||"application/octet-stream").toLowerCase();
+      if(!allowed.has(mime))return jsonResponse({error:"Format non accepté. Utilise PDF, DOCX, PPTX, ZIP, MP4, JPEG ou PNG."},415);
+      const id=randomHex(16),key="resources/"+user.id+"/"+resourceId+"/"+id;
+      await env.APP_FILES.put(key,await file.arrayBuffer(),{httpMetadata:{contentType:mime}});
+      try{
+        await env.DB.prepare("INSERT INTO resource_files (id,resource_id,file_name,mime_type,file_size,object_key,status) VALUES (?,?,?,?,?,?,'pending_review')").bind(id,resourceId,String(file.name||"fichier").slice(0,180),mime,file.size,key).run();
+      }catch(error){await env.APP_FILES.delete(key);throw error;}
+      return jsonResponse({success:true,file:{id,name:String(file.name||"fichier"),size:file.size,status:"pending_review"}},201);
+    }
+    if(parts.length===4&&parts[3]==="submit"&&request.method==="POST"){
+      if(!["draft","rejected"].includes(resource.status))return jsonResponse({error:"Cette ressource n'est pas dans un état permettant une nouvelle soumission."},409);
+      const now=new Date().toISOString();
+      await env.DB.prepare("UPDATE published_resources SET status='pending_review',rejection_reason=NULL,updated_at=? WHERE id=? AND user_id=?").bind(now,resourceId,user.id).run();
+      return jsonResponse({success:true,status:"pending_review",message:"Votre cours ou contenu a été transmis à l'administration. Il sera public après validation."},202);
+    }
+    if(parts.length===3&&request.method==="DELETE"){
+      if(["published","pending_review","suspended"].includes(resource.status))return jsonResponse({error:"Cette ressource doit d'abord être clôturée par l'administration."},409);
+      const files=await env.DB.prepare("SELECT object_key FROM resource_files WHERE resource_id=?").bind(resourceId).all();
+      if(env.APP_FILES)for(const file of files.results||[])await env.APP_FILES.delete(file.object_key);
+      await env.DB.prepare("DELETE FROM published_resources WHERE id=? AND user_id=?").bind(resourceId,user.id).run();
+      return jsonResponse({success:true});
+    }
+  }
+
   // Fiches de publication.
   if(path==="/api/publisher"&&request.method==="GET"){
     const r=await env.DB.prepare("SELECT id,name,slug,description,category,status,rejection_reason,created_at,updated_at,published_at FROM published_apps WHERE user_id=? ORDER BY created_at DESC").bind(user.id).all();
@@ -657,6 +777,20 @@ async function studioHandleApi(request, env, url) {
       const r=await env.DB.prepare("SELECT id,version_name,version_code,file_size,file_type,changelog,status,created_at FROM app_versions WHERE app_id=? ORDER BY version_code DESC").bind(appId).all();
       return jsonResponse({success:true,versions:r.results||[]});
     }
+
+    if(parts.length===4&&parts[3]==="releases"&&request.method==="POST"){
+      if(!["draft","rejected"].includes(app.status))return jsonResponse({error:"Dépose une nouvelle version avant de soumettre la fiche."},409);
+      if(!env.APP_FILES||typeof env.APP_FILES.put!=="function")return jsonResponse({error:"Le stockage sécurisé des APK n'est pas configuré.",code:"PRIVATE_STORAGE_NOT_CONFIGURED"},503);
+      const form=await request.formData(),file=form.get("file"),versionName=studioText(form.get("version_name"),40),versionCode=Number(form.get("version_code")),changelog=studioText(form.get("changelog"),2000);
+      if(!file||typeof file.arrayBuffer!=="function"||!String(file.name||"").toLowerCase().endsWith(".apk"))return jsonResponse({error:"Sélectionne un fichier APK valide."},400);
+      if(!Number.isInteger(versionCode)||versionCode<1||!versionName)return jsonResponse({error:"Nom et code de version valides obligatoires."},400);
+      if(file.size<1||file.size>100*1024*1024)return jsonResponse({error:"L'APK doit peser au maximum 100 Mo."},413);
+      const mime="application/vnd.android.package-archive",id=randomHex(16),key="apps/"+user.id+"/"+appId+"/"+id+".apk";
+      await env.APP_FILES.put(key,await file.arrayBuffer(),{httpMetadata:{contentType:mime}});
+      try{await env.DB.prepare("INSERT INTO app_release_files (id,app_id,version_name,version_code,file_name,mime_type,file_size,changelog,object_key,status) VALUES (?,?,?,?,?,?,?,?,?,'pending_review')").bind(id,appId,versionName,versionCode,String(file.name||"application.apk").slice(0,180),mime,file.size,changelog,key).run();}
+      catch(error){await env.APP_FILES.delete(key);return jsonResponse({error:"Cette version existe déjà ou n'a pas pu être enregistrée."},409);}
+      return jsonResponse({success:true,release:{id,version_name:versionName,version_code:versionCode,status:"pending_review"}},201);
+    }
     if(parts.length===4&&parts[3]==="versions"&&request.method==="POST"){
       return jsonResponse({error:"Le stockage privé des APK n'est pas activé. Aucun fichier ne peut être téléversé dans cette version.",storage:"not_configured"},503);
     }
@@ -676,9 +810,47 @@ async function studioHandleApi(request, env, url) {
         env.DB.prepare("SELECT COUNT(*) AS n FROM users").first(),
         env.DB.prepare("SELECT COUNT(*) AS n FROM projects WHERE status='active'").first(),
         env.DB.prepare("SELECT COUNT(*) AS n FROM published_apps WHERE status='published'").first(),
+        env.DB.prepare("SELECT COUNT(*) AS n FROM published_apps WHERE status='pending_review'").first(),
+        env.DB.prepare("SELECT COUNT(*) AS n FROM published_resources WHERE resource_type='course'").first(),
+        env.DB.prepare("SELECT COUNT(*) AS n FROM published_resources WHERE resource_type='course' AND status='published'").first(),
+        env.DB.prepare("SELECT COUNT(*) AS n FROM published_resources WHERE resource_type='course' AND status='pending_review'").first(),
+        env.DB.prepare("SELECT COUNT(*) AS n FROM published_resources WHERE resource_type='content'").first(),
+        env.DB.prepare("SELECT COUNT(*) AS n FROM published_resources WHERE resource_type='content' AND status='published'").first(),
+        env.DB.prepare("SELECT COUNT(*) AS n FROM published_resources WHERE resource_type='content' AND status='pending_review'").first()
+      ]);
+      return jsonResponse({success:true,counts:{
+        users:c[0].n,active_projects:c[1].n,published_apps:c[2].n,pending_reviews:Number(c[3].n)+Number(c[6].n)+Number(c[9].n),
+        total_apps:Number(c[2].n)+Number(c[3].n),total_courses:c[4].n,published_courses:c[5].n,pending_courses:c[6].n,
+        total_contents:c[7].n,published_contents:c[8].n,pending_contents:c[9].n,
+        published_total:Number(c[2].n)+Number(c[5].n)+Number(c[8].n)
+      }});
+    }
+      const c=await Promise.all([
+        env.DB.prepare("SELECT COUNT(*) AS n FROM users").first(),
+        env.DB.prepare("SELECT COUNT(*) AS n FROM projects WHERE status='active'").first(),
+        env.DB.prepare("SELECT COUNT(*) AS n FROM published_apps WHERE status='published'").first(),
         env.DB.prepare("SELECT COUNT(*) AS n FROM published_apps WHERE status='pending_review'").first()
       ]);
       return jsonResponse({success:true,counts:{users:c[0].n,active_projects:c[1].n,published_apps:c[2].n,pending_reviews:c[3].n}});
+    }
+
+    if(parts.length===4&&parts[2]==="resources"&&parts[3]==="pending"&&request.method==="GET"){
+      const r=await env.DB.prepare("SELECT r.id,r.user_id,r.resource_type AS type,r.title,r.slug,r.description,r.category,r.status,r.created_at,u.email AS owner_email FROM published_resources r JOIN users u ON u.id=r.user_id WHERE r.status='pending_review' ORDER BY r.created_at").all();
+      return jsonResponse({success:true,resources:r.results||[]});
+    }
+    if(parts.length===4&&parts[2]==="resources"&&request.method==="POST"){
+      const resourceId=parts[3],body=await studioReadBody(request),decision=studioText(body.decision,20),comment=studioText(body.comment||"",2000);
+      if(!["approved","rejected","suspended"].includes(decision))return jsonResponse({error:"Décision invalide."},400);
+      const resource=await env.DB.prepare("SELECT id,slug,status FROM published_resources WHERE id=? LIMIT 1").bind(resourceId).first();
+      if(!resource)return jsonResponse({error:"Ressource introuvable."},404);
+      if(decision==="approved"&&resource.status!=="pending_review")return jsonResponse({error:"Seules les ressources en attente peuvent être approuvées."},409);
+      const now=new Date().toISOString();
+      await env.DB.batch([
+        env.DB.prepare("UPDATE published_resources SET status=?,rejection_reason=?,published_at=CASE WHEN ?='approved' THEN ? ELSE published_at END,updated_at=? WHERE id=?").bind(decision,decision==="approved"?null:comment,decision,now,now,resourceId),
+        env.DB.prepare("UPDATE resource_files SET status=? WHERE resource_id=? AND status='pending_review'").bind(decision==="approved"?"approved":"rejected",resourceId),
+        env.DB.prepare("INSERT INTO resource_reviews (id,resource_id,reviewed_by,decision,comment) VALUES (?,?,?,?,?)").bind(randomHex(16),resourceId,user.id,decision,comment)
+      ]);
+      return jsonResponse({success:true,status:decision,public_url:decision==="approved"?"/publications/"+encodeURIComponent(resource.slug):null});
     }
     if(parts.length===4&&parts[2]==="publications"&&parts[3]==="pending"&&request.method==="GET"){
       const r=await env.DB.prepare("SELECT a.id,a.user_id,a.name,a.slug,a.description,a.category,a.status,a.created_at,u.email AS owner_email FROM published_apps a JOIN users u ON u.id=a.user_id WHERE a.status='pending_review' ORDER BY a.created_at").all();
@@ -697,6 +869,7 @@ async function studioHandleApi(request, env, url) {
       const now=new Date().toISOString();
       await env.DB.batch([
         env.DB.prepare("UPDATE published_apps SET status=?,rejection_reason=?,published_at=CASE WHEN ?='approved' THEN ? ELSE published_at END,updated_at=? WHERE id=?").bind(decision,decision==="approved"?null:comment,decision,now,now,appId),
+        env.DB.prepare("UPDATE app_release_files SET status=?,approved_at=CASE WHEN ?='approved' THEN ? ELSE approved_at END WHERE app_id=? AND status='pending_review'").bind(decision==="approved"?"approved":"rejected",decision,now,appId),
         env.DB.prepare("INSERT INTO app_publication_reviews (id,app_id,version_id,reviewed_by,decision,comment) VALUES (?,?,NULL,?,?,?)").bind(randomHex(16),appId,user.id,decision,comment)
       ]);
       return jsonResponse({success:true,status:decision,public_url:decision==="approved"?"/applications/"+encodeURIComponent(app.slug):null,message:decision==="approved"?"La fiche de présentation est maintenant publique.":"La décision administrative a été enregistrée."});
