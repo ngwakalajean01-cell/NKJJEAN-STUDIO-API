@@ -79,10 +79,11 @@ La migration `migrations/0002_project_workspace.sql` crée les tables de convers
 Une fiche n'est visible par tous qu'après approbation par un administrateur. Son adresse publique est `https://<domaine-worker>/applications/<slug>` et elle peut être copiée depuis l'espace personnel. Cette publication correspond à une page de présentation dans Chrome ; elle ne fournit pas de téléchargement APK tant que le stockage privé R2 n'est pas activé.
 
 Administration :
+- `/admin` : panneau d'administration des publications (réservé au rôle admin)
 - `GET /api/admin/overview`
 - `GET /api/admin/publications/pending`
 - `GET /api/admin/publication-orders`
-- `POST /api/admin/apps/:appId` : refus ou suspension avec un motif
+- `POST /api/admin/apps/:appId` : approbation, refus ou suspension avec un motif
 
 Les routes d'administration exigent un compte dont `users.role = 'admin'`. Aucun compte client ordinaire ne reçoit ce rôle à l'inscription.
 
