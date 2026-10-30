@@ -621,6 +621,289 @@ const STUDIO_HOME_HTML = `<!DOCTYPE html><html lang="fr"><head><meta charset="UT
 
 const STUDIO_DOCS_HTML = `<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>En savoir plus — NKJJEAN STUDIO</title><style>body{margin:0;background:#07111f;color:#e8f1fb;font:16px/1.7 system-ui,sans-serif}.wrap{max-width:900px;margin:auto;padding:30px 22px 70px}a{color:#70c2ff}h1{font-size:40px}h2{margin-top:34px;color:#8fd5ff}.panel{background:#0e2033;border:1px solid #25435f;border-radius:15px;padding:22px;margin:16px 0;color:#b8c9dc}</style></head><body><main class="wrap"><a href="/">← Retour à l’accueil</a><h1>Comprendre NKJJEAN STUDIO</h1><p>Votre environnement numérique pour créer et gérer des projets, des clés API, des quotas et la publication contrôlée d’applications.</p><h2>Comptes et sécurité</h2><div class="panel">Chaque compte possède ses projets. Les mots de passe sont protégés par PBKDF2-SHA-256 et les sessions par des jetons HMAC. Ne partagez jamais votre jeton ni vos clés API.</div><h2>Projets et API</h2><div class="panel">Chaque projet possède ses informations, ses quotas et ses clés API. Une clé complète ne s’affiche qu’une seule fois lors de sa création. Une clé peut être révoquée.</div><h2>IA propriétaire</h2><div class="panel">Le modèle propre à NKJJEAN STUDIO n’est pas encore entraîné ni hébergé. Aucun service Gemini, OpenAI ou autre fournisseur externe n’est appelé. Le modèle nécessitera une infrastructure de calcul et un entraînement dédiés.</div><h2>Publication</h2><div class="panel">Les applications ne deviennent publiques qu’après validation administrative. Le stockage privé des APK et la confirmation automatique des paiements ne sont pas activés dans cette version.</div><h2>Paiements et contact</h2><div class="panel">Numéro de réception prévu : <strong>0814620569</strong>. Son enregistrement ne confirme aucun transfert. Une confirmation réelle nécessite une connexion vérifiée à un opérateur mobile-money.<br>WhatsApp : <a href="https://wa.me/243992049808">0992049808</a><br>Email : <a href="mailto:ngwakalajean01@gmail.com">ngwakalajean01@gmail.com</a></div><p><a href="/app">Ouvrir mon espace</a> · <a href="/applications">Catalogue public</a></p></main></body></html>`
 
+const STUDIO_APP_HTML = `<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><title>Mon espace — NKJJEAN STUDIO</title><style>:root{color-scheme:dark;--line:#284863;--muted:#a8bbce;--blue:#62b4ff;--cyan:#65e0df}*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 85% 0,#14385b 0,transparent 35%),#07111f;color:#edf6ff;font:15px/1.6 system-ui,sans-serif}.wrap{max-width:1120px;margin:auto;padding:22px 16px 65px}a{color:#8dccff}.top,.row,.actions{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap}.top{padding-bottom:18px;border-bottom:1px solid #ffffff1c}.brand{font-weight:950;letter-spacing:.08em}.brand span{color:var(--cyan)}.panel,.project{background:linear-gradient(150deg,#10243a,#0b1b2c);border:1px solid var(--line);border-radius:15px;padding:20px;margin:16px 0}.muted{color:var(--muted)}.field{display:block;max-width:620px;margin:12px 0}.field input,.field textarea,.field select{display:block;width:100%;margin-top:6px;padding:12px;border:1px solid #34516d;border-radius:9px;background:#071726;color:#fff}.field textarea{min-height:100px}.btn{border:0;border-radius:9px;background:linear-gradient(110deg,var(--blue),var(--cyan));color:#061321;font-weight:850;padding:11px 16px;cursor:pointer;text-decoration:none;display:inline-flex}.secondary{background:#17334d;color:#edf6ff;border:1px solid var(--line)}.danger{background:#713340;color:#fff}.hidden{display:none!important}.token{background:#06101b;border:1px dashed #65d9c2;padding:12px;overflow-wrap:anywhere;color:#9fe8d2}.project{display:flex;flex-wrap:wrap;justify-content:space-between;gap:12px}.project h3{margin:0 0 5px}.project p{margin:0;color:var(--muted)}.tabs{display:flex;gap:8px;flex-wrap:wrap;margin:18px 0}.tabs a{padding:9px 13px;background:#10263b;border:1px solid #34516d;border-radius:9px;text-decoration:none}.status{color:var(--cyan);font-weight:800}.sectionTitle{margin-bottom:5px}.notice{padding:12px;background:#0a1b2b;border-left:3px solid var(--cyan);border-radius:8px}@media(max-width:600px){.wrap{padding:14px 12px 45px}}</style></head><body><main class="wrap"><header class="top"><a class="brand" href="/">NKJJEAN <span>STUDIO</span></a><nav class="row"><a href="/">Accueil</a><a href="/applications">Applications</a><a href="/cours">Cours</a><a href="/publications">Contenus</a><a href="/docs">Aide</a><a id="adminLink" class="hidden" href="/admin">Administration</a></nav></header><section id="auth" class="panel"><h1>Votre espace personnel</h1><p class="muted">Connectez-vous ou créez votre compte.</p><div class="row"><button class="btn" id="showLogin">Connexion</button><button class="btn secondary" id="showRegister">Créer un compte</button></div><form id="loginForm"><h2>Connexion</h2><label class="field">Adresse email<input name="email" type="email" autocomplete="email" required></label><label class="field">Mot de passe<input name="password" type="password" autocomplete="current-password" required></label><button class="btn">Se connecter</button></form><form id="registerForm" class="hidden"><h2>Créer un compte</h2><label class="field">Adresse email<input name="email" type="email" required></label><label class="field">Mot de passe (8 caractères minimum)<input name="password" type="password" minlength="8" required></label><button class="btn">Créer mon compte</button></form><p id="authMessage" class="muted" aria-live="polite"></p></section><section id="dashboard" class="hidden"><section class="panel row"><div><div class="muted">Compte connecté</div><strong id="userEmail"></strong></div><button class="btn secondary" id="logout">Déconnexion</button></section><nav class="tabs"><a href="#projectsSection">Mes projets</a><a href="#appsSection">Mes applications</a><a href="#resourcesSection">Mes cours et contenus</a></nav><section id="projectsSection" class="panel"><h2>Créer un projet</h2><form id="projectForm"><label class="field">Nom du projet<input name="name" maxlength="100" required></label><label class="field">Description<textarea name="description" maxlength="2000"></textarea></label><button class="btn">Créer le projet</button></form><p class="muted">Quotas gratuits initiaux : 1 000 requêtes, 100 000 jetons, 100 requêtes quotidiennes et 1 000 mensuelles par projet.</p><h3>Mes projets</h3><div id="projects" class="muted">Chargement…</div><div id="keyNotice" class="panel hidden"></div></section><section id="appsSection" class="panel"><div class="eyebrow">Publication d'applications</div><h2>Proposer une application Android</h2><p class="muted">Créez la fiche, ajoutez le fichier APK, puis soumettez l'ensemble. L'application sera publique uniquement après validation administrative.</p><form id="appForm"><label class="field">Nom de l’application<input name="name" required maxlength="120"></label><label class="field">Catégorie<input name="category" value="Autres" maxlength="80"></label><label class="field">Description<textarea name="description" maxlength="5000"></textarea></label><button class="btn">Créer la fiche d'application</button></form><div id="myApps"></div></section><section id="resourcesSection" class="panel"><div class="eyebrow">Cours et autres publications</div><h2>Proposer un cours ou un contenu</h2><form id="resourceForm"><label class="field">Type de publication<select name="type"><option value="course">Cours</option><option value="content">Autre contenu</option></select></label><label class="field">Titre<input name="title" required maxlength="140"></label><label class="field">Catégorie<input name="category" value="Autres" maxlength="100"></label><label class="field">Description<textarea name="description" maxlength="8000"></textarea></label><button class="btn">Créer la fiche</button></form><div id="myResources"></div></section></section></main><script>(function(){const auth=document.getElementById("auth"),dash=document.getElementById("dashboard"),msg=document.getElementById("authMessage"),projects=document.getElementById("projects");let token=localStorage.getItem("nkj_session")||sessionStorage.getItem("nkj_session")||"";if(token)localStorage.setItem("nkj_session",token);function esc(v){return String(v==null?"":v).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}async function api(path,opt){opt=opt||{};opt.headers=opt.headers||{};if(!(opt.body instanceof FormData))opt.headers["Content-Type"]=opt.headers["Content-Type"]||"application/json";if(token)opt.headers.Authorization="Bearer "+token;const r=await fetch(path,opt);let d={};try{d=await r.json();}catch(e){}if(!r.ok)throw new Error((d.error||"La demande a échoué.")+" (HTTP "+r.status+")");return d;}document.getElementById("showLogin").onclick=()=>{document.getElementById("loginForm").classList.remove("hidden");document.getElementById("registerForm").classList.add("hidden");};document.getElementById("showRegister").onclick=()=>{document.getElementById("registerForm").classList.remove("hidden");document.getElementById("loginForm").classList.add("hidden");};document.getElementById("registerForm").onsubmit=async e=>{e.preventDefault();const f=new FormData(e.target),credentials={email:f.get("email"),password:f.get("password")};try{await api("/api/auth/register",{method:"POST",body:JSON.stringify(credentials)});const s=await api("/api/auth/login",{method:"POST",body:JSON.stringify(credentials)});token=s.token;localStorage.setItem("nkj_session",token);e.target.reset();await loadDashboard();}catch(x){msg.textContent=x.message;}};document.getElementById("loginForm").onsubmit=async e=>{e.preventDefault();const f=new FormData(e.target);try{const d=await api("/api/auth/login",{method:"POST",body:JSON.stringify({email:f.get("email"),password:f.get("password")})});token=d.token;localStorage.setItem("nkj_session",token);await loadDashboard();}catch(x){msg.textContent=x.message;}};document.getElementById("logout").onclick=async()=>{try{await api("/api/auth/logout",{method:"POST",body:"{}"});}catch(x){}token="";localStorage.removeItem("nkj_session");auth.classList.remove("hidden");dash.classList.add("hidden");msg.textContent="Vous êtes déconnecté.";};document.getElementById("projectForm").onsubmit=async e=>{e.preventDefault();const f=new FormData(e.target);try{await api("/api/projects",{method:"POST",body:JSON.stringify({name:f.get("name"),description:f.get("description")})});e.target.reset();await loadProjects();}catch(x){alert(x.message);}};document.getElementById("appForm").onsubmit=async e=>{e.preventDefault();const f=new FormData(e.target);try{await api("/api/publisher",{method:"POST",body:JSON.stringify({name:f.get("name"),category:f.get("category"),description:f.get("description")})});e.target.reset();await loadApps();}catch(x){alert(x.message);}};document.getElementById("resourceForm").onsubmit=async e=>{e.preventDefault();const f=new FormData(e.target);try{await api("/api/resources",{method:"POST",body:JSON.stringify({type:f.get("type"),title:f.get("title"),category:f.get("category"),description:f.get("description")})});e.target.reset();await loadResources();}catch(x){alert(x.message);}};async function loadProjects(){const d=await api("/api/projects");if(!d.projects.length){projects.textContent="Aucun projet. Créez votre premier projet ci-dessus.";return;}projects.innerHTML=d.projects.map(p=>"<article class='project'><div><h3>"+esc(p.name)+"</h3><p>"+esc(p.description||"Sans description")+"</p><p>Demandes : "+esc(p.quotas.requests_limit)+" · Jetons : "+esc(p.quotas.tokens_limit)+"</p></div><div class='row'><a class='btn' href='/studio/"+encodeURIComponent(p.id)+"'>Ouvrir le Studio</a></div></article>").join("");}async function loadApps(){const d=await api("/api/publisher"),area=document.getElementById("myApps"),statuses={draft:"Brouillon",pending_review:"En attente",published:"Publiée",rejected:"Refusée",suspended:"Suspendue"};area.innerHTML=(d.apps||[]).map(a=>{const link="/applications/"+encodeURIComponent(a.slug);let controls="";if(["draft","rejected"].includes(a.status))controls="<form class='releaseForm' data-release='"+esc(a.id)+"'><label class='field'>Fichier APK<input type='file' name='file' accept='.apk,application/vnd.android.package-archive' required></label><label class='field'>Version<input name='version_name' placeholder='1.0.0' required></label><label class='field'>Code de version<input name='version_code' type='number' min='1' required></label><label class='field'>Notes de version<textarea name='changelog'></textarea></label><button class='btn secondary'>Envoyer APK pour contrôle</button></form><button class='btn' data-submit-app='"+esc(a.id)+"'>Soumettre la fiche à l'administration</button>";if(a.status==="published")controls="<a class='btn' target='_blank' href='"+link+"'>Voir la page publique</a>";return "<article class='project'><div><strong>"+esc(a.name)+"</strong><p>"+esc(a.category)+" · "+esc(statuses[a.status]||a.status)+"</p><p>"+esc(a.description||"")+"</p>"+(a.rejection_reason?"<p>Motif : "+esc(a.rejection_reason)+"</p>":"")+"</div><div class='row'>"+controls+"</div></article>";}).join("")||"<p class='muted'>Aucune application proposée.</p>";area.querySelectorAll("[data-release]").forEach(form=>form.onsubmit=async e=>{e.preventDefault();const data=new FormData(form);try{await api("/api/publisher/"+encodeURIComponent(form.dataset.release)+"/releases",{method:"POST",body:data});alert("APK transmis pour contrôle.");await loadApps();}catch(x){alert(x.message);}});area.querySelectorAll("[data-submit-app]").forEach(btn=>btn.onclick=async()=>{if(!confirm("Soumettre cette fiche à l'administration ?"))return;try{await api("/api/publisher/"+encodeURIComponent(btn.dataset.submitApp)+"/submit",{method:"POST",body:"{}"});await loadApps();}catch(x){alert(x.message);}});}async function loadResources(){const d=await api("/api/resources"),area=document.getElementById("myResources"),statuses={draft:"Brouillon",pending_review:"En attente",published:"Publiée",rejected:"Refusée",suspended:"Suspendue"};area.innerHTML=(d.resources||[]).map(x=>{const href=(x.type==="course"?"/cours/":"/publications/")+encodeURIComponent(x.slug);let controls="";if(["draft","rejected"].includes(x.status))controls="<form class='resourceFileForm' data-file='"+esc(x.id)+"'><label class='field'>Fichier facultatif (PDF, DOCX, PPTX, ZIP, MP4, JPEG, PNG)<input type='file' name='file'></label><button class='btn secondary'>Ajouter un fichier</button></form><button class='btn' data-submit-resource='"+esc(x.id)+"'>Soumettre pour publication</button>";if(x.status==="published")controls="<a class='btn' target='_blank' href='"+href+"'>Voir la page publique</a>";return "<article class='project'><div><strong>"+esc(x.title)+"</strong><p>"+esc(x.type==="course"?"Cours":"Autre contenu")+" · "+esc(x.category)+" · "+esc(statuses[x.status]||x.status)+"</p><p>"+esc(x.description||"")+"</p>"+(x.rejection_reason?"<p>Motif : "+esc(x.rejection_reason)+"</p>":"")+"</div><div class='row'>"+controls+"</div></article>";}).join("")||"<p class='muted'>Aucun cours ou contenu proposé.</p>";area.querySelectorAll("[data-file]").forEach(form=>form.onsubmit=async e=>{e.preventDefault();const data=new FormData(form);if(!data.get("file")||!data.get("file").size){alert("Choisissez un fichier.");return;}try{await api("/api/resources/"+encodeURIComponent(form.dataset.file)+"/files",{method:"POST",body:data});alert("Fichier envoyé pour contrôle.");await loadResources();}catch(x){alert(x.message);}});area.querySelectorAll("[data-submit-resource]").forEach(btn=>btn.onclick=async()=>{if(!confirm("Soumettre ce cours ou contenu à l'administration ?"))return;try{await api("/api/resources/"+encodeURIComponent(btn.dataset.submitResource)+"/submit",{method:"POST",body:"{}"});await loadResources();}catch(x){alert(x.message);}});}async function loadDashboard(){let account;try{account=await api("/api/auth/me");}catch(x){if(x.message.includes("(HTTP 401)")){token="";localStorage.removeItem("nkj_session");auth.classList.remove("hidden");dash.classList.add("hidden");msg.textContent=x.message;}else{auth.classList.remove("hidden");dash.classList.add("hidden");msg.textContent="Vérification de session impossible : "+x.message;}return;}document.getElementById("userEmail").textContent=account.user.email;if(account.user.role==="admin")document.getElementById("adminLink").classList.remove("hidden");auth.classList.add("hidden");dash.classList.remove("hidden");msg.textContent="Connexion réussie.";try{await loadProjects();}catch(x){projects.textContent=x.message;}try{await loadApps();}catch(x){document.getElementById("myApps").textContent=x.message;}try{await loadResources();}catch(x){document.getElementById("myResources").textContent=x.message;}}if(token)loadDashboard();})();</script></body></html>`;
+}
+
+async function verifyPassword(password, stored) {
+  if (typeof stored !== "string") return false;
+
+  let iterations;
+  let saltHex;
+  let expectedHex;
+  const parts = stored.split("$");
+
+  if (parts.length === 4 && parts[0] === "pbkdf2-sha256") {
+    iterations = Number(parts[1]);
+    saltHex = parts[2];
+    expectedHex = parts[3];
+  } else {
+    // Compatibilité avec les comptes créés avant le correctif :
+    // l'ancien code avait oublié les séparateurs "$".
+    const legacyPrefix = "pbkdf2-sha256" + PBKDF2_ITERATIONS;
+    if (
+      !stored.startsWith(legacyPrefix) ||
+      stored.length !== legacyPrefix.length + 96
+    ) {
+      return false;
+    }
+    iterations = PBKDF2_ITERATIONS;
+    saltHex = stored.slice(legacyPrefix.length, legacyPrefix.length + 32);
+    expectedHex = stored.slice(legacyPrefix.length + 32);
+  }
+
+  if (
+    !Number.isInteger(iterations) ||
+    iterations !== PBKDF2_ITERATIONS ||
+    !/^[a-f0-9]{32}$/i.test(saltHex) ||
+    !/^[a-f0-9]{64}$/i.test(expectedHex)
+  ) {
+    return false;
+  }
+
+  const salt = new Uint8Array(
+    saltHex.match(/.{2}/g).map(byte => parseInt(byte, 16))
+  );
+
+  const key = await crypto.subtle.importKey(
+    "raw",
+    new TextEncoder().encode(password),
+    "PBKDF2",
+    false,
+    ["deriveBits"]
+  );
+
+  const derived = await crypto.subtle.deriveBits(
+    {
+      name: "PBKDF2",
+      salt,
+      iterations,
+      hash: "SHA-256"
+    },
+    key,
+    256
+  );
+
+  const actual = new Uint8Array(derived);
+  const expected = new Uint8Array(
+    expectedHex.match(/.{2}/g).map(byte => parseInt(byte, 16))
+  );
+
+  if (actual.length !== expected.length) return false;
+
+  let difference = 0;
+
+  for (let i = 0; i < actual.length; i++) {
+    difference |= actual[i] ^ expected[i];
+  }
+
+  return difference === 0;
+}
+
+async function sessionTokenHash(token, secret) {
+  const key = await crypto.subtle.importKey(
+    "raw",
+    new TextEncoder().encode(secret),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"]
+  );
+
+  const signature = await crypto.subtle.sign(
+    "HMAC",
+    key,
+    new TextEncoder().encode(token)
+  );
+
+  return Array.from(new Uint8Array(signature))
+    .map(value => value.toString(16).padStart(2, "0"))
+    .join("");
+}
+
+
+// ==================== NKJJEAN STUDIO : MODULES ====================
+
+const STUDIO_DEFAULT_QUOTAS = {
+  requests_limit: 1000,
+  tokens_limit: 100000,
+  daily_limit: 100,
+  monthly_limit: 1000,
+  free_access: 1
+};
+
+function studioText(value, maxLength) {
+  return typeof value === "string" ? value.trim().slice(0, maxLength || 2000) : "";
+}
+
+function studioSlug(value) {
+  return studioText(value, 120).toLowerCase()
+    .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 80);
+}
+
+async function studioHash(value) {
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(value));
+  return Array.from(new Uint8Array(digest))
+    .map(v => v.toString(16).padStart(2, "0")).join("");
+}
+
+async function studioReadBody(request) {
+  const size = Number(request.headers.get("Content-Length") || "0");
+  if (size > 1024 * 1024) throw new Error("PAYLOAD_TOO_LARGE");
+  try {
+    const body = await request.json();
+    if (!body || typeof body !== "object" || Array.isArray(body)) throw new Error("INVALID_JSON");
+    return body;
+  } catch (error) {
+    throw new Error("INVALID_JSON");
+  }
+}
+
+async function studioGetUser(request, env) {
+  const authorization = request.headers.get("Authorization") || "";
+  const match = authorization.match(/^Bearer ([a-f0-9]{64})$/i);
+  if (!match) return null;
+  const hash = await sessionTokenHash(match[1].toLowerCase(), env.SESSION_SECRET);
+  const session = await env.DB.prepare(
+    "SELECT s.id AS session_id,s.user_id,s.expires_at,u.email,u.role,u.status FROM user_sessions s JOIN users u ON u.id=s.user_id WHERE s.token_hash=? AND s.revoked_at IS NULL AND s.expires_at>? LIMIT 1"
+  ).bind(hash, new Date().toISOString()).first();
+  if (!session || session.status !== "active") return null;
+  const refreshedExpiry = new Date(Date.now() + SESSION_IDLE_MS).toISOString();
+  await env.DB.prepare(
+    "UPDATE user_sessions SET expires_at=? WHERE id=? AND revoked_at IS NULL"
+  ).bind(refreshedExpiry, session.session_id).run();
+  return { id: session.user_id, email: session.email, role: session.role };
+}
+
+async function studioProjectOwner(env, projectId, userId) {
+  return await env.DB.prepare(
+    "SELECT id,user_id,name,description,status,created_at,updated_at FROM projects WHERE id=? AND user_id=? AND status='active' LIMIT 1"
+  ).bind(projectId, userId).first();
+}
+
+async function studioWorkspaceReady(env) {
+  const result = await env.DB.prepare(
+    "SELECT name FROM sqlite_master WHERE type='table' AND name IN ('project_conversations','project_messages')"
+  ).all();
+  return !!(result && result.results && result.results.length === 2);
+}
+
+// Vérifie les colonnes nécessaires sans exposer de données personnelles.
+async function studioHasColumns(env, table, requiredColumns) {
+  const allowedTables = new Set(["users", "user_sessions", "published_apps", "app_versions", "published_resources", "resource_files", "app_release_files"]);
+  if (!env.DB || !allowedTables.has(table)) return false;
+  try {
+    const result = await env.DB.prepare(`PRAGMA table_info(${table})`).all();
+    const available = new Set((result.results || []).map(column => column.name));
+    return requiredColumns.every(column => available.has(column));
+  } catch (error) {
+    return false;
+  }
+}
+
+async function studioApiKey(request, env) {
+  const raw = request.headers.get("X-API-Key") || "";
+  if (!/^nkj_live_[a-f0-9]{64}$/i.test(raw)) return null;
+  const hash = await studioHash(raw);
+  const key = await env.DB.prepare(
+    "SELECT k.id AS api_key_id,k.project_id,p.user_id,p.status AS project_status,k.status AS key_status FROM api_keys k JOIN projects p ON p.id=k.project_id WHERE k.key_hash=? LIMIT 1"
+  ).bind(hash).first();
+  if (!key || key.key_status !== "active" || key.project_status !== "active") return null;
+  return key;
+}
+
+async function studioGenerateWithOwnAI(env, options) {
+  if (!env.NKJ_AI || typeof env.NKJ_AI.fetch !== "function") {
+    return { success:false, status:503, error:"Le moteur IA propriétaire NKJJEAN n'est pas encore relié à cette plateforme.", code:"AI_ENGINE_NOT_CONFIGURED" };
+  }
+
+  const prompt = studioText(options.prompt, 20000);
+  if (!prompt) return { success:false, status:400, error:"Le message destiné à l'IA est vide." };
+
+  const quota = await env.DB.prepare(
+    "SELECT requests_limit,tokens_limit,daily_limit,monthly_limit FROM project_quotas WHERE project_id=? LIMIT 1"
+  ).bind(options.projectId).first();
+  if (!quota) return { success:false, status:403, error:"Les quotas de ce projet sont introuvables." };
+
+  const daily = await env.DB.prepare(
+    "SELECT COALESCE(SUM(requests_count),0) AS requests,COALESCE(SUM(input_tokens+output_tokens),0) AS tokens FROM usage_logs WHERE project_id=? AND created_at>=strftime('%Y-%m-%dT00:00:00Z','now')"
+  ).bind(options.projectId).first();
+  const month = await env.DB.prepare(
+    "SELECT COALESCE(SUM(requests_count),0) AS requests FROM usage_logs WHERE project_id=? AND substr(created_at,1,7)=strftime('%Y-%m','now')"
+  ).bind(options.projectId).first();
+  if ((quota.daily_limit > 0 && Number(daily.requests) >= quota.daily_limit) ||
+      (quota.monthly_limit > 0 && Number(month.requests) >= quota.monthly_limit) ||
+      (quota.requests_limit > 0 && Number(month.requests) >= quota.requests_limit)) {
+    return { success:false, status:429, error:"Le quota de requêtes de ce projet est atteint.", code:"PROJECT_QUOTA_EXCEEDED" };
+  }
+  if (quota.tokens_limit > 0 && Number(daily.tokens) >= quota.tokens_limit) {
+    return { success:false, status:429, error:"Le quota quotidien de jetons de ce projet est atteint.", code:"PROJECT_TOKEN_QUOTA_EXCEEDED" };
+  }
+
+  const requestId = randomHex(16);
+  let response;
+  try {
+    const internalRequest = new Request("https://nkjjean-ai.internal/v1/generate", {
+      method:"POST",
+      headers:{
+        "Content-Type":"application/json",
+        "Accept":"application/json",
+        "X-NKJJEAN-REQUEST-ID":requestId
+      },
+      body:JSON.stringify({
+        model:"nkjjean-proprietary",
+        task:"chat",
+        prompt,
+        context:options.context || {},
+        history:Array.isArray(options.history) ? options.history.slice(-20) : [],
+        project:{id:options.projectId,user_id:options.userId},
+        conversation_id:options.conversationId || null
+      })
+    });
+    response = await env.NKJ_AI.fetch(internalRequest);
+  } catch (error) {
+    return { success:false,status:502,error:"Le moteur IA propriétaire est momentanément injoignable.",code:"AI_ENGINE_UNREACHABLE" };
+  }
+  if (!response || !response.ok) {
+    return { success:false,status:502,error:"Le moteur IA propriétaire a refusé ou interrompu la demande.",code:"AI_ENGINE_ERROR" };
+  }
+
+  let generated;
+  try { generated = await response.json(); }
+  catch (error) { return { success:false,status:502,error:"Réponse invalide du moteur IA propriétaire.",code:"AI_ENGINE_INVALID_RESPONSE" }; }
+
+  const answer = typeof generated.answer === "string" ? generated.answer.trim()
+    : (typeof generated.output_text === "string" ? generated.output_text.trim()
+      : (typeof generated.response === "string" ? generated.response.trim() : ""));
+  if (!answer) return { success:false,status:502,error:"Le moteur IA n'a pas renvoyé de réponse exploitable.",code:"AI_ENGINE_EMPTY_RESPONSE" };
+
+  const inputTokens = Math.max(0,Math.min(10000000,Number(generated.usage && generated.usage.input_tokens) || 0));
+  const outputTokens = Math.max(0,Math.min(10000000,Number(generated.usage && generated.usage.output_tokens) || 0));
+  if (quota.tokens_limit > 0 && Number(daily.tokens) + inputTokens + outputTokens > quota.tokens_limit) {
+    return { success:false,status:429,error:"Cette réponse dépasserait le quota quotidien de jetons du projet.",code:"PROJECT_TOKEN_QUOTA_EXCEEDED" };
+  }
+
+  const now = new Date().toISOString();
+  try {
+    await env.DB.prepare(
+      "INSERT INTO usage_logs (id,project_id,api_key_id,endpoint,requests_count,input_tokens,output_tokens,status_code,created_at) VALUES (?,?,?,?,1,?,?,200,?)"
+    ).bind(requestId,options.projectId,options.apiKeyId || null,"/v1/ai",inputTokens,outputTokens,now).run();
+  } catch (error) {
+    return { success:false,status:500,error:"La réponse IA a été produite, mais son utilisation n'a pas pu être enregistrée.",code:"AI_USAGE_LOG_FAILED" };
+  }
+
+  return {
+    success:true,
+    answer,
+    model:typeof generated.model === "string" ? generated.model : "NKJJEAN IA propriétaire",
+    usage:{input_tokens:inputTokens,output_tokens:outputTokens},
+    request_id:requestId
+  };
+}
+
+const STUDIO_HOME_HTML = `<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="NKJJEAN STUDIO : projets, API et applications."><title>NKJJEAN STUDIO</title><style>:root{color-scheme:dark;--line:#203c57;--text:#e8f1fb;--muted:#9db1c8;--blue:#58aaff;--cyan:#65e0df}*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 80% 5%,#12365a 0,transparent 34%),linear-gradient(145deg,#06101c,#071629 65%,#08111f);color:var(--text);font:16px/1.65 system-ui,sans-serif}a{color:inherit;text-decoration:none}.wrap{width:min(1120px,calc(100% - 36px));margin:auto}.top{display:flex;align-items:center;justify-content:space-between;padding:22px 0;border-bottom:1px solid #ffffff16}.brand{font-weight:900;letter-spacing:.08em}.brand span{color:var(--cyan)}nav{display:flex;gap:20px;align-items:center;color:var(--muted);font-size:14px}.btn{display:inline-flex;align-items:center;justify-content:center;padding:11px 18px;border-radius:10px;font-weight:800;background:linear-gradient(110deg,var(--blue),var(--cyan));color:#061321}.alt{background:#142a40;color:var(--text);border:1px solid var(--line)}.hero{padding:76px 0 60px;display:grid;grid-template-columns:1.15fr .85fr;gap:40px;align-items:center}.eyebrow{color:var(--cyan);font-size:12px;font-weight:800;letter-spacing:.19em;text-transform:uppercase}.hero h1{font-size:clamp(42px,6vw,70px);line-height:1.04;margin:16px 0 20px;letter-spacing:-.045em}.hero h1 b{color:var(--blue)}.lead{font-size:19px;color:var(--muted)}.actions{display:flex;flex-wrap:wrap;gap:12px;margin-top:28px}.visual{min-height:310px;border:1px solid #4c85bb55;border-radius:26px;padding:24px;background:linear-gradient(145deg,#133353aa,#0b1d30dd);box-shadow:0 24px 80px #0006;position:relative;overflow:hidden}.visual:before,.visual:after{content:"";position:absolute;border:1px solid #55a8ff44;border-radius:50%;width:250px;height:250px;right:-70px;top:-75px}.visual:after{width:170px;height:170px;right:70px;top:125px;border-color:#65e0df55}.codebox{position:relative;z-index:1;margin-top:22px;background:#06111fdd;border:1px solid #345372;border-radius:14px;padding:18px;color:#c7e6ff;font:13px/2 ui-monospace,monospace}.green{color:#7de2c2}.blue{color:#73baff}.section{padding:46px 0}.section h2{font-size:clamp(28px,4vw,40px);line-height:1.15;margin:8px 0 14px}.sub{color:var(--muted);max-width:760px}.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:25px}.card{padding:23px;border:1px solid var(--line);background:linear-gradient(150deg,#10243a,#0b1929);border-radius:17px}.symbol{width:42px;height:42px;display:grid;place-items:center;border-radius:12px;background:#173b5d;color:var(--cyan);font-size:20px}.card h3{margin:14px 0 7px}.card p{color:var(--muted);margin:0}.strip{border:1px solid #315474;background:#0b1d2e;border-radius:20px;padding:27px;display:flex;align-items:center;justify-content:space-between;gap:18px}.steps{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:20px}.step{border-top:2px solid var(--blue);padding:15px 12px;background:#0c1b2b;color:var(--muted)}.step strong{display:block;color:#fff}.foot{border-top:1px solid #ffffff18;margin-top:48px;padding:27px 0;color:var(--muted);font-size:13px;display:flex;flex-wrap:wrap;justify-content:space-between;gap:18px}.foot a{color:#b9d9f6}@media(max-width:780px){nav{gap:12px}nav a:not(.navbtn){display:none}.hero{grid-template-columns:1fr;padding:50px 0 30px}.grid{grid-template-columns:1fr}.steps{grid-template-columns:1fr 1fr}.strip{align-items:flex-start;flex-direction:column}}</style></head><body><div class="wrap"><header class="top"><a class="brand" href="/">NKJJEAN<span> STUDIO</span></a><nav><a href="/docs">En savoir plus</a><a href="/applications">Applications</a><a href="#contact">Contact</a><a class="navbtn btn alt" href="/app">Mon espace</a></nav></header><main><section class="hero"><div><div class="eyebrow">Studio numérique indépendant</div><h1>Vos projets.<br><b>Vos API.</b><br>Vos applications.</h1><p class="lead">Une plateforme pour organiser vos projets numériques, gérer leurs accès API, suivre leur utilisation et préparer la publication de vos applications Android.</p><div class="actions"><a class="btn" href="/app">Créer mon espace</a><a class="btn alt" href="/docs">En savoir plus</a></div></div><div class="visual"><div class="eyebrow">Votre environnement de travail</div><div class="codebox"><span class="green">PROJET</span> / application-mobile<br><span class="blue">API</span> — clé privée par projet<br><span class="blue">QUOTAS</span> — suivi et historique<br><span class="blue">PUBLICATION</span> — validation administrative<br><br><span class="green">✓</span> Données séparées par propriétaire<br><span class="green">✓</span> Accès sécurisés par session</div></div></section><section class="section"><div class="eyebrow">Un environnement organisé</div><h2>Tout commence dans votre espace personnel.</h2><p class="sub">Créez des projets distincts, gérez leurs informations et délivrez des clés API séparées. Chaque compte ne voit que ses propres projets et son historique.</p><div class="grid"><article class="card"><div class="symbol">⌘</div><h3>Gestion des projets</h3><p>Créez, consultez, modifiez et archivez vos projets dans un espace personnel.</p></article><article class="card"><div class="symbol">⌘</div><h3>Clés API privées</h3><p>Une clé par projet, affichée une seule fois à sa création et révocable à tout moment.</p></article><article class="card"><div class="symbol">◷</div><h3>Quotas et activité</h3><p>Suivez les limites d’utilisation et l’historique des requêtes enregistrées.</p></article><article class="card"><div class="symbol">▤</div><h3>Publication d’applications</h3><p>Préparez une fiche, soumettez-la au contrôle et suivez la décision administrative.</p></article><article class="card"><div class="symbol">⬡</div><h3>Catalogue public</h3><p>Les applications approuvées apparaissent avec leurs informations et versions autorisées.</p></article><article class="card"><div class="symbol">✧</div><h3>IA propriétaire NKJJEAN</h3><p>Le modèle devra être entraîné et hébergé sur une infrastructure dédiée avant de générer des réponses. Aucune IA externe n’est utilisée.</p></article></div></section><section class="section"><div class="strip"><div><div class="eyebrow">Parcours de publication</div><h2>Une publication contrôlée.</h2><p class="sub">Fiche, version, confirmation du paiement et validation administrative : une application n’est publique qu’après les contrôles requis.</p></div><a class="btn" href="/applications">Voir les applications</a></div><div class="steps"><div class="step"><strong>1. Préparer</strong>Créer la fiche et ses informations.</div><div class="step"><strong>2. Déposer</strong>Ajouter un APK lorsque le stockage sécurisé sera activé.</div><div class="step"><strong>3. Vérifier</strong>Contrôler les frais et les éléments soumis.</div><div class="step"><strong>4. Décider</strong>Validation ou refus par l’administration.</div></div></section><section class="section"><div class="strip"><div><div class="eyebrow">Démarrer maintenant</div><h2>Créez votre compte NKJJEAN STUDIO.</h2><p class="sub">Les projets commencent avec les quotas gratuits initiaux. Les services payants ne seront activés qu’après leur configuration réelle.</p></div><a class="btn" href="/app">Ouvrir mon espace</a></div></section></main><footer id="contact" class="foot"><div>© NKJJEAN STUDIO — Plateforme numérique.</div><div><a href="https://wa.me/243992049808">WhatsApp</a> · <a href="tel:+243992049808">Téléphone</a> · <a href="mailto:ngwakalajean01@gmail.com">Gmail</a></div></footer></div></body></html>`
+
+const STUDIO_DOCS_HTML = `<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>En savoir plus — NKJJEAN STUDIO</title><style>body{margin:0;background:#07111f;color:#e8f1fb;font:16px/1.7 system-ui,sans-serif}.wrap{max-width:900px;margin:auto;padding:30px 22px 70px}a{color:#70c2ff}h1{font-size:40px}h2{margin-top:34px;color:#8fd5ff}.panel{background:#0e2033;border:1px solid #25435f;border-radius:15px;padding:22px;margin:16px 0;color:#b8c9dc}</style></head><body><main class="wrap"><a href="/">← Retour à l’accueil</a><h1>Comprendre NKJJEAN STUDIO</h1><p>Votre environnement numérique pour créer et gérer des projets, des clés API, des quotas et la publication contrôlée d’applications.</p><h2>Comptes et sécurité</h2><div class="panel">Chaque compte possède ses projets. Les mots de passe sont protégés par PBKDF2-SHA-256 et les sessions par des jetons HMAC. Ne partagez jamais votre jeton ni vos clés API.</div><h2>Projets et API</h2><div class="panel">Chaque projet possède ses informations, ses quotas et ses clés API. Une clé complète ne s’affiche qu’une seule fois lors de sa création. Une clé peut être révoquée.</div><h2>IA propriétaire</h2><div class="panel">Le modèle propre à NKJJEAN STUDIO n’est pas encore entraîné ni hébergé. Aucun service Gemini, OpenAI ou autre fournisseur externe n’est appelé. Le modèle nécessitera une infrastructure de calcul et un entraînement dédiés.</div><h2>Publication</h2><div class="panel">Les applications ne deviennent publiques qu’après validation administrative. Le stockage privé des APK et la confirmation automatique des paiements ne sont pas activés dans cette version.</div><h2>Paiements et contact</h2><div class="panel">Numéro de réception prévu : <strong>0814620569</strong>. Son enregistrement ne confirme aucun transfert. Une confirmation réelle nécessite une connexion vérifiée à un opérateur mobile-money.<br>WhatsApp : <a href="https://wa.me/243992049808">0992049808</a><br>Email : <a href="mailto:ngwakalajean01@gmail.com">ngwakalajean01@gmail.com</a></div><p><a href="/app">Ouvrir mon espace</a> · <a href="/applications">Catalogue public</a></p></main></body></html>`
+
 const STUDIO_APP_HTML = `<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Mon espace — NKJJEAN STUDIO</title><style>:root{color-scheme:dark}*{box-sizing:border-box}body{margin:0;background:#07111f;color:#eaf3ff;font:15px/1.6 system-ui,sans-serif}.wrap{max-width:1000px;margin:auto;padding:24px 18px 70px}a{color:#85caff}.panel,.project{background:#0e2033;border:1px solid #25435f;border-radius:15px;padding:20px;margin:16px 0}.muted{color:#9db1c8}.row{display:flex;gap:10px;flex-wrap:wrap}.field{display:block;width:100%;max-width:460px;margin:10px 0}.field input,.field textarea{width:100%;padding:12px;border:1px solid #34516d;border-radius:9px;background:#071726;color:#fff}.btn{border:0;border-radius:9px;background:#56afff;color:#061321;font-weight:800;padding:11px 16px;cursor:pointer}.secondary{background:#1b3854;color:#eaf3ff;border:1px solid #34516d}.danger{background:#602d38;color:white}.hidden{display:none}.token{background:#06101b;border:1px dashed #65d9c2;padding:12px;overflow-wrap:anywhere;color:#9fe8d2}.project{display:flex;flex-wrap:wrap;justify-content:space-between;gap:12px}.project h3{margin:0 0 5px}.project p{margin:0;color:#a9bdd2}</style></head><body><main class="wrap"><header class="row" style="justify-content:space-between"><strong>NKJJEAN STUDIO</strong><span><a href="/">Accueil</a> · <a href="/applications">Applications</a> · <a href="/docs">Aide</a></span></header><section id="auth" class="panel"><h1>Votre espace personnel</h1><p class="muted">Connectez-vous ou créez votre compte.</p><div class="row"><button class="btn" id="showLogin">Connexion</button><button class="btn secondary" id="showRegister">Créer un compte</button></div><form id="loginForm"><h2>Connexion</h2><label class="field">Adresse email<input name="email" type="email" autocomplete="email" required></label><label class="field">Mot de passe<input name="password" type="password" autocomplete="current-password" required></label><button class="btn">Se connecter</button></form><form id="registerForm" class="hidden"><h2>Créer un compte</h2><label class="field">Adresse email<input name="email" type="email" required></label><label class="field">Mot de passe (8 caractères minimum)<input name="password" type="password" minlength="8" required></label><button class="btn">Créer mon compte</button></form><p id="authMessage" class="muted" aria-live="polite"></p></section><section id="dashboard" class="hidden"><div class="panel row" style="justify-content:space-between"><div><div class="muted">Compte connecté</div><strong id="userEmail"></strong></div><button class="btn secondary" id="logout">Déconnexion</button></div><div class="panel"><h2>Créer un projet</h2><form id="projectForm"><label class="field">Nom du projet<input name="name" maxlength="100" required></label><label class="field">Description<textarea name="description" maxlength="2000"></textarea></label><button class="btn">Créer le projet</button></form><p class="muted">Quotas gratuits initiaux : 1 000 requêtes, 100 000 jetons, 100 requêtes quotidiennes et 1 000 mensuelles par projet.</p></div><div class="panel"><h2>Mes projets</h2><div id="projects" class="muted">Chargement…</div></div><div id="keyNotice" class="panel hidden"></div><div class="panel"><h2>Publication de mes applications</h2><p class="muted">Les fiches peuvent être préparées. Le dépôt APK attend un stockage privé adapté. Le paiement attend une intégration mobile-money vérifiée.</p><form id="appForm"><label class="field">Nom de l’application<input name="name" required maxlength="120"></label><label class="field">Catégorie<input name="category" value="Autres" maxlength="80"></label><label class="field">Description<textarea name="description" maxlength="5000"></textarea></label><button class="btn">Créer la fiche</button></form><div id="myApps"></div></div></section></main><script>(function(){const auth=document.getElementById("auth"),dash=document.getElementById("dashboard"),msg=document.getElementById("authMessage"),projects=document.getElementById("projects");let token=localStorage.getItem("nkj_session")||sessionStorage.getItem("nkj_session")||"";if(token)localStorage.setItem("nkj_session",token);function esc(v){return String(v==null?"":v).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}async function api(path,opt){opt=opt||{};opt.headers=opt.headers||{};opt.headers["Content-Type"]=opt.headers["Content-Type"]||"application/json";if(token)opt.headers.Authorization="Bearer "+token;const r=await fetch(path,opt);let d={};try{d=await r.json();}catch(e){}if(!r.ok)throw new Error((d.error||"La demande a échoué.")+" (HTTP "+r.status+")");return d;}document.getElementById("showLogin").onclick=()=>{document.getElementById("loginForm").classList.remove("hidden");document.getElementById("registerForm").classList.add("hidden");};document.getElementById("showRegister").onclick=()=>{document.getElementById("registerForm").classList.remove("hidden");document.getElementById("loginForm").classList.add("hidden");};document.getElementById("registerForm").onsubmit=async e=>{e.preventDefault();const f=new FormData(e.target),credentials={email:f.get("email"),password:f.get("password")};try{await api("/api/auth/register",{method:"POST",body:JSON.stringify(credentials)});const s=await api("/api/auth/login",{method:"POST",body:JSON.stringify(credentials)});token=s.token;localStorage.setItem("nkj_session",token);e.target.reset();msg.textContent="Compte créé. Connexion en cours…";await loadDashboard();}catch(x){msg.textContent=x.message;}};document.getElementById("loginForm").onsubmit=async e=>{e.preventDefault();const f=new FormData(e.target);try{const d=await api("/api/auth/login",{method:"POST",body:JSON.stringify({email:f.get("email"),password:f.get("password")})});token=d.token;localStorage.setItem("nkj_session",token);await loadDashboard();}catch(x){msg.textContent=x.message;}};document.getElementById("logout").onclick=async()=>{try{await api("/api/auth/logout",{method:"POST",body:"{}"});}catch(x){}token="";localStorage.removeItem("nkj_session");auth.classList.remove("hidden");dash.classList.add("hidden");msg.textContent="Vous êtes déconnecté.";};document.getElementById("projectForm").onsubmit=async e=>{e.preventDefault();const f=new FormData(e.target);try{await api("/api/projects",{method:"POST",body:JSON.stringify({name:f.get("name"),description:f.get("description")})});e.target.reset();await loadProjects();}catch(x){alert(x.message);}};document.getElementById("appForm").onsubmit=async e=>{e.preventDefault();const f=new FormData(e.target);try{await api("/api/publisher",{method:"POST",body:JSON.stringify({name:f.get("name"),category:f.get("category"),description:f.get("description")})});e.target.reset();await loadApps();}catch(x){alert(x.message);}};async function loadProjects(){
  const d=await api("/api/projects");
  if(!d.projects.length){projects.textContent="Aucun projet. Créez votre premier projet ci-dessus.";return;}
