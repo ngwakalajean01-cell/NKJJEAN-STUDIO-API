@@ -353,6 +353,15 @@ async function studioHandleApi(request, env, url) {
     return jsonResponse({ error:"Utilisez les routes d'authentification existantes." },405);
   }
 
+  if (typeof env.SESSION_SECRET !== "string" || env.SESSION_SECRET.length < 32) {
+    return jsonResponse({
+      error: "Le secret de session n'est pas configuré correctement dans l'environnement Production du Worker.",
+      code: "SESSION_SECRET_MISSING",
+      required_secret: "SESSION_SECRET",
+      minimum_length: 32
+    }, 503);
+  }
+
   const user = await studioGetUser(request,env);
   if (!user) return jsonResponse({ error:"Session invalide ou connexion requise." },401);
   const parts = path.split("/").filter(Boolean);
@@ -569,7 +578,15 @@ export default {
     }
     if ((url.pathname.startsWith("/api/") && !url.pathname.startsWith("/api/auth/")) ||
         url.pathname === "/v1/project" || url.pathname === "/v1/usage") {
-      if (!env.DB || !env.SESSION_SECRET) return jsonResponse({ error: "Service indisponible." }, 503);
+      // D1 est nécessaire aux API métier ; le secret de session n'est requis
+      // que pour les routes authentifiées par session et non pour le catalogue,
+      // la santé du service ou les requêtes signées par clé API.
+      if (!env.DB) return jsonResponse({
+        error: "La base D1 n'est pas liée à ce Worker.",
+        code: "D1_BINDING_MISSING",
+        required_binding: "DB",
+        required_database: "nkjjean-studio-db"
+      }, 503);
       try { return await studioHandleApi(request, env, url); }
       catch (error) {
         if (error && error.message === "INVALID_JSON") return jsonResponse({ error: "Corps JSON invalide." }, 400);
