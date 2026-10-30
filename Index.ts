@@ -1065,6 +1065,8 @@ async function studioHandleApi(request, env, url) {
     }
     if(parts.length===3&&request.method==="DELETE"){
       if(["published","pending_review","suspended"].includes(app.status))return jsonResponse({error:"Cette fiche doit d'abord être clôturée par l'administration."},409);
+      const storedFiles=await env.DB.prepare("SELECT object_key FROM app_release_files WHERE app_id=?").bind(appId).all();
+      if(env.APP_FILES)for(const stored of storedFiles.results||[])await env.APP_FILES.delete(stored.object_key);
       await env.DB.prepare("DELETE FROM published_apps WHERE id=? AND user_id=?").bind(appId,user.id).run();
       return jsonResponse({success:true,message:"Fiche supprimée."});
     }
