@@ -43,12 +43,29 @@ Les routes privées utilisent `Authorization: Bearer <jeton_de_session>`.
 
 Une clé API complète est affichée une seule fois au moment de sa création. Seul son hachage est stocké dans D1.
 
-## API pour les applications clientes
+## API commune pour les applications clientes et TECHNONKJJEAN
 
 - `GET /v1/project` avec l'en-tête `X-API-Key` : lire les informations du projet et ses quotas
 - `POST /v1/usage` avec l'en-tête `X-API-Key` : enregistrer une utilisation et contrôler les limites gratuites
+- `POST /v1/ai` avec l'en-tête `X-API-Key` : envoyer une demande au moteur IA propriétaire NKJJEAN et recevoir sa réponse
 
-Ces routes fournissent l'identification du projet et le suivi des usages. Elles ne constituent pas encore un moteur IA.
+Exemple de demande :
+```json
+{
+  "prompt": "Analyse cette demande et propose un plan de réalisation.",
+  "context": {
+    "application": "TECHNONKJJEAN"
+  }
+}
+```
+
+La réponse attendue est un objet JSON contenant `success`, `answer`, `model` et `usage.input_tokens / usage.output_tokens`. Les quotas du projet sont vérifiés avant l'appel et les utilisations sont enregistrées dans D1.
+
+### Moteur IA privé requis
+
+Le Worker API appelle un second Worker privé nommé `nkjjean-ai-engine` au moyen d'une Service Binding Cloudflare appelée `NKJ_AI`. Le moteur doit accepter `POST https://nkjjean-ai.internal/v1/generate` et renvoyer un JSON avec au minimum `answer`. Aucun appel Gemini, OpenAI ou autre fournisseur externe n'est effectué.
+
+**État actuel :** l'interface, l'API de passerelle et le contrôle des quotas sont préparés. Le Worker de génération propriétaire et son modèle ne sont pas encore déployés. Sans la liaison privée `NKJ_AI`, l'API répond explicitement `AI_ENGINE_NOT_CONFIGURED` et ne fabrique aucune réponse.
 
 ## Studio et espaces de travail par projet
 
@@ -76,7 +93,7 @@ La migration `migrations/0002_project_workspace.sql` crée les tables de convers
 - `GET /api/store/apps` : catalogue public des fiches approuvées
 - `GET /api/store/apps/:slug` : page publique partageable
 
-Une fiche n'est visible par tous qu'après approbation par un administrateur. Son adresse publique est `https://<domaine-worker>/applications/<slug>` et elle peut être copiée depuis l'espace personnel. Cette publication correspond à une page de présentation dans Chrome ; elle ne fournit pas de téléchargement APK tant que le stockage privé R2 n'est pas activé.
+Une fiche n'est visible par tous qu'après approbation par un administrateur. Son adresse publique est `https://<domaine-worker>/applications/<slug>` et elle peut être copiée depuis l'espace personnel. Le panneau d'administration est accessible à `/admin` uniquement avec un compte ayant le rôle `admin`. Cette publication correspond à une page de présentation dans Chrome ; elle ne fournit pas de téléchargement APK tant que le stockage privé R2 n'est pas activé.
 
 Administration :
 - `/admin` : panneau d'administration des publications (réservé au rôle admin)
