@@ -949,24 +949,27 @@ async function studioHandleApi(request, env, url) {
         databaseConnected = false;
       }
     }
-    const [usersReady, sessionsReady, appsReady, versionsReady] = env.DB
+    const [usersReady, sessionsReady, appsReady, versionsReady, resourcesReady, resourceFilesReady, releaseFilesReady] = env.DB
       ? await Promise.all([
           studioHasColumns(env, "users", ["id", "email", "password_hash", "role", "status"]),
           studioHasColumns(env, "user_sessions", ["id", "user_id", "token_hash", "expires_at", "revoked_at"]),
           studioHasColumns(env, "published_apps", ["id", "user_id", "name", "slug", "description", "category", "status", "published_at"]),
-          studioHasColumns(env, "app_versions", ["id", "app_id", "version_name", "version_code", "file_size", "file_type", "changelog", "status", "created_at"])
+          studioHasColumns(env, "app_versions", ["id", "app_id", "version_name", "version_code", "file_size", "file_type", "changelog", "status", "created_at"]),
+          studioHasColumns(env, "published_resources", ["id", "user_id", "resource_type", "title", "slug", "description", "category", "status", "published_at"]),
+          studioHasColumns(env, "resource_files", ["id", "resource_id", "file_name", "mime_type", "file_size", "object_key", "status"]),
+          studioHasColumns(env, "app_release_files", ["id", "app_id", "version_name", "version_code", "object_key", "status"])
         ])
-      : [false, false, false, false];
+      : [false, false, false, false, false, false, false];
 
     return jsonResponse({
       success: true,
       service: "NKJJEAN STUDIO",
-      release: "2026-10-30-diagnostic-503-v2",
+      release: "2026-10-30-public-catalog-v1",
       checks: {
         database_connected: databaseConnected,
         session_secret_configured: typeof env.SESSION_SECRET === "string" && env.SESSION_SECRET.length >= 32,
         account_creation_and_login_ready: databaseConnected && !!env.SESSION_SECRET && usersReady && sessionsReady,
-        public_catalog_schema_ready: databaseConnected && appsReady && versionsReady,
+        public_catalog_schema_ready: databaseConnected && appsReady && versionsReady && resourcesReady && resourceFilesReady && releaseFilesReady,
         conversation_tables_ready: databaseConnected ? await studioWorkspaceReady(env) : false,
         own_ai_engine_connected: !!(env.NKJ_AI && typeof env.NKJ_AI.fetch === "function")
       },
@@ -998,7 +1001,8 @@ async function studioHandleApi(request, env, url) {
       ).bind(slug).first();
       if (!app) return jsonResponse({ error:"Application introuvable ou non publiée." },404);
       const versions = await env.DB.prepare("SELECT id,version_name,version_code,file_size,changelog,created_at FROM app_versions WHERE app_id=? AND status='approved' ORDER BY version_code DESC").bind(app.id).all();
-      return jsonResponse({ success:true,app,versions:versions.results||[] });
+      const releases = await env.DB.prepare("SELECT id,version_name,version_code,file_name,file_size,changelog,created_at FROM app_release_files WHERE app_id=? AND status='approved' ORDER BY version_code DESC").bind(app.id).all();
+      return jsonResponse({ success:true,app,versions:versions.results||[],releases:(releases.results||[]).map(x=>({...x,download_url:"/api/download/app/"+encodeURIComponent(x.id)})) });
     }
     return jsonResponse({ error:"Route publique introuvable." },404);
   }
@@ -1459,6 +1463,24 @@ export default {
       }});
     }
 
+
+    if (url.pathname === "/robots.txt" && request.method === "GET") {
+      return new Response("User-agent: *\\nAllow: /\\nDisallow: /app\\nDisallow: /admin\\nDisallow: /studio/\\nDisallow: /api/\\nSitemap: "+url.origin+"/sitemap.xml\\n",{headers:{"Content-Type":"text/plain;charset=UTF-8","Cache-Control":"public, max-age=3600"}});
+    }
+    if (url.pathname === "/sitemap.xml" && request.method === "GET") {
+      if (!env.DB) return new Response("<?xml version=\"1.0\" encoding=\"UTF-8\"?><urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\"></urlset>",{headers:{"Content-Type":"application/xml;charset=UTF-8"}});
+      const [apps,resources]=await Promise.all([
+        env.DB.prepare("SELECT slug,published_at FROM published_apps WHERE status='published'").all(),
+        env.DB.prepare("SELECT slug,resource_type,published_at FROM published_resources WHERE status='published'").all()
+      ]);
+      const xmlEscape=value=>String(value||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&apos;");
+      const entries=[["/",new Date().toISOString()],["/applications",new Date().toISOString()],["/cours",new Date().toISOString()],["/publications",new Date().toISOString()]];
+      for(const item of apps.results||[])entries.push(["/applications/"+encodeURIComponent(item.slug),item.published_at]);
+      for(const item of resources.results||[])entries.push([(item.resource_type==="course"?"/cours/":"/publications/")+encodeURIComponent(item.slug),item.published_at]);
+      const body='<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'+entries.map(x=>"<url><loc>"+xmlEscape(url.origin+x[0])+"</loc>"+(x[1]?"<lastmod>"+xmlEscape(x[1])+"</lastmod>":"")+"</url>").join("")+"</urlset>";
+      return new Response(body,{headers:{"Content-Type":"application/xml;charset=UTF-8","Cache-Control":"public, max-age=900"}});
+    }
+
     if (url.pathname === "/" && request.method === "GET") {
       return new Response(STUDIO_HOME_HTML, { headers: { "Content-Type": "text/html;charset=UTF-8", "Cache-Control": "no-store" } });
     }
@@ -1474,8 +1496,26 @@ export default {
     if (url.pathname.startsWith("/studio/") && request.method === "GET") {
       return new Response(STUDIO_WORKSPACE_HTML, { headers: { "Content-Type": "text/html;charset=UTF-8", "Cache-Control": "no-store" } });
     }
-    if ((url.pathname === "/applications" || url.pathname.startsWith("/applications/")) && request.method === "GET") {
-      return new Response(STUDIO_STORE_HTML, { headers: { "Content-Type": "text/html;charset=UTF-8", "Cache-Control": "no-store" } });
+    if ((url.pathname === "/applications" || url.pathname.startsWith("/applications/") ||
+         url.pathname === "/cours" || url.pathname.startsWith("/cours/") ||
+         url.pathname === "/publications" || url.pathname.startsWith("/publications/")) && request.method === "GET") {
+      let html=STUDIO_STORE_HTML;
+      const pageParts=url.pathname.split("/").filter(Boolean);
+      if(pageParts.length===2){
+        const slug=decodeURIComponent(pageParts[1]);
+        const isApp=pageParts[0]==="applications";
+        const item=isApp
+          ? await env.DB.prepare("SELECT name AS title,description,slug FROM published_apps WHERE slug=? AND status='published' LIMIT 1").bind(slug).first()
+          : await env.DB.prepare("SELECT title,description,slug FROM published_resources WHERE slug=? AND status='published' LIMIT 1").bind(slug).first();
+        if(item){
+          const safeTitle=String(item.title||"NKJJEAN STUDIO").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+          const safeDescription=String(item.description||"Publication NKJJEAN STUDIO").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])).slice(0,300);
+          html=html.replace("<title>Catalogue public — NKJJEAN STUDIO</title>","<title>"+safeTitle+" — NKJJEAN STUDIO</title>")
+            .replace('content="Catalogue public NKJJEAN STUDIO : applications, cours et ressources numériques validés."','content="'+safeDescription+'"')
+            .replace('<meta name="robots" content="index,follow">','<meta name="robots" content="index,follow"><link rel="canonical" href="'+url.origin+url.pathname+'">');
+        }
+      }
+      return new Response(html, { headers: { "Content-Type": "text/html;charset=UTF-8", "Cache-Control": "no-store", "X-Content-Type-Options":"nosniff" } });
     }
     if ((url.pathname.startsWith("/api/") && !url.pathname.startsWith("/api/auth/")) ||
         url.pathname === "/v1/project" || url.pathname === "/v1/usage" || url.pathname === "/v1/ai") {
