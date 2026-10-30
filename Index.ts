@@ -1464,7 +1464,7 @@ export default {
 
 
     if (url.pathname === "/robots.txt" && request.method === "GET") {
-      return new Response("User-agent: *\\nAllow: /\\nDisallow: /app\\nDisallow: /admin\\nDisallow: /studio/\\nDisallow: /api/\\nSitemap: "+url.origin+"/sitemap.xml\\n",{headers:{"Content-Type":"text/plain;charset=UTF-8","Cache-Control":"public, max-age=3600"}});
+      return new Response("User-agent: *\nAllow: /\nDisallow: /app\nDisallow: /admin\nDisallow: /studio/\nDisallow: /api/\nSitemap: "+url.origin+"/sitemap.xml\\n",{headers:{"Content-Type":"text/plain;charset=UTF-8","Cache-Control":"public, max-age=3600"}});
     }
     if (url.pathname === "/sitemap.xml" && request.method === "GET") {
       if (!env.DB) return new Response("<?xml version=\"1.0\" encoding=\"UTF-8\"?><urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\"></urlset>",{headers:{"Content-Type":"application/xml;charset=UTF-8"}});
