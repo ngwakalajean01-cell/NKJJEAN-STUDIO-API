@@ -1384,24 +1384,16 @@ async function studioHandleApi(request, env, url) {
         env.DB.prepare("SELECT COUNT(*) AS n FROM published_resources WHERE resource_type='course' AND status='pending_review'").first(),
         env.DB.prepare("SELECT COUNT(*) AS n FROM published_resources WHERE resource_type='content'").first(),
         env.DB.prepare("SELECT COUNT(*) AS n FROM published_resources WHERE resource_type='content' AND status='published'").first(),
-        env.DB.prepare("SELECT COUNT(*) AS n FROM published_resources WHERE resource_type='content' AND status='pending_review'").first()
+        env.DB.prepare("SELECT COUNT(*) AS n FROM published_resources WHERE resource_type='content' AND status='pending_review'").first(),
+        env.DB.prepare("SELECT COUNT(*) AS n FROM published_apps").first()
       ]);
       return jsonResponse({success:true,counts:{
         users:c[0].n,active_projects:c[1].n,published_apps:c[2].n,pending_reviews:Number(c[3].n)+Number(c[6].n)+Number(c[9].n),
-        total_apps:Number(c[2].n)+Number(c[3].n),total_courses:c[4].n,published_courses:c[5].n,pending_courses:c[6].n,
+        total_apps:c[10].n,total_courses:c[4].n,published_courses:c[5].n,pending_courses:c[6].n,
         total_contents:c[7].n,published_contents:c[8].n,pending_contents:c[9].n,
         published_total:Number(c[2].n)+Number(c[5].n)+Number(c[8].n)
       }});
     }
-      const c=await Promise.all([
-        env.DB.prepare("SELECT COUNT(*) AS n FROM users").first(),
-        env.DB.prepare("SELECT COUNT(*) AS n FROM projects WHERE status='active'").first(),
-        env.DB.prepare("SELECT COUNT(*) AS n FROM published_apps WHERE status='published'").first(),
-        env.DB.prepare("SELECT COUNT(*) AS n FROM published_apps WHERE status='pending_review'").first()
-      ]);
-      return jsonResponse({success:true,counts:{users:c[0].n,active_projects:c[1].n,published_apps:c[2].n,pending_reviews:c[3].n}});
-    }
-
     if(parts.length===4&&parts[2]==="resources"&&parts[3]==="pending"&&request.method==="GET"){
       const r=await env.DB.prepare("SELECT r.id,r.user_id,r.resource_type AS type,r.title,r.slug,r.description,r.category,r.status,r.created_at,u.email AS owner_email FROM published_resources r JOIN users u ON u.id=r.user_id WHERE r.status='pending_review' ORDER BY r.created_at").all();
       return jsonResponse({success:true,resources:r.results||[]});
@@ -1419,6 +1411,13 @@ async function studioHandleApi(request, env, url) {
         env.DB.prepare("INSERT INTO resource_reviews (id,resource_id,reviewed_by,decision,comment) VALUES (?,?,?,?,?)").bind(randomHex(16),resourceId,user.id,decision,comment)
       ]);
       return jsonResponse({success:true,status:decision,public_url:decision==="approved"?"/publications/"+encodeURIComponent(resource.slug):null});
+    }
+    if(parts.length===4&&parts[2]==="publications"&&parts[3]==="published"&&request.method==="GET"){
+      const [apps,resources]=await Promise.all([
+        env.DB.prepare("SELECT id,name AS title,slug,category,'application' AS type,published_at FROM published_apps WHERE status='published' ORDER BY published_at DESC").all(),
+        env.DB.prepare("SELECT id,title,slug,category,resource_type AS type,published_at FROM published_resources WHERE status='published' ORDER BY published_at DESC").all()
+      ]);
+      return jsonResponse({success:true,items:[...(apps.results||[]),...(resources.results||[])].sort((a,b)=>String(b.published_at||"").localeCompare(String(a.published_at||"")))});
     }
     if(parts.length===4&&parts[2]==="publications"&&parts[3]==="pending"&&request.method==="GET"){
       const r=await env.DB.prepare("SELECT a.id,a.user_id,a.name,a.slug,a.description,a.category,a.status,a.created_at,u.email AS owner_email FROM published_apps a JOIN users u ON u.id=a.user_id WHERE a.status='pending_review' ORDER BY a.created_at").all();
