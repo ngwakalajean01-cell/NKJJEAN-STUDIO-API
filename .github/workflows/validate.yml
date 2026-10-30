@@ -26,6 +26,9 @@ jobs:
           cp Index.ts /tmp/nkjjean-worker.js
           node --check /tmp/nkjjean-worker.js
 
+      - name: Tester le hachage des mots de passe et les anciens comptes
+        run: node tests/auth-password.test.cjs
+
       - name: Vérifier la migration D1 avec SQLite
         run: |
           python3 - <<'PY'
