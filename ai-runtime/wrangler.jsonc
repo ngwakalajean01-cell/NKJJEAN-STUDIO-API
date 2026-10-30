@@ -1,0 +1,7 @@
+{
+  "name": "nkjjean-ai-runtime",
+  "main": "Index.ts",
+  "compatibility_date": "2026-10-30",
+  "workers_dev": true,
+  "keep_vars": true
+}
