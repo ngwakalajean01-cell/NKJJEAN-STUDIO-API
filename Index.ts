@@ -276,6 +276,7 @@ async function studioHandleApi(request, env, url) {
     return jsonResponse({
       success: true,
       service: "NKJJEAN STUDIO",
+      release: "2026-10-30-diagnostic-503-v2",
       checks: {
         database_connected: databaseConnected,
         session_secret_configured: typeof env.SESSION_SECRET === "string" && env.SESSION_SECRET.length >= 32,
