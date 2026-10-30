@@ -507,7 +507,8 @@ export default {
     if ((url.pathname === "/applications" || url.pathname.startsWith("/applications/")) && request.method === "GET") {
       return new Response(STUDIO_STORE_HTML, { headers: { "Content-Type": "text/html;charset=UTF-8", "Cache-Control": "no-store" } });
     }
-    if (url.pathname.startsWith("/api/") && !url.pathname.startsWith("/api/auth/")) {
+    if ((url.pathname.startsWith("/api/") && !url.pathname.startsWith("/api/auth/")) ||
+        url.pathname === "/v1/project" || url.pathname === "/v1/usage") {
       if (!env.DB || !env.SESSION_SECRET) return jsonResponse({ error: "Service indisponible." }, 503);
       try { return await studioHandleApi(request, env, url); }
       catch (error) {
