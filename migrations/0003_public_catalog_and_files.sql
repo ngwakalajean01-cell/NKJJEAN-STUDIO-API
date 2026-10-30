@@ -57,3 +57,14 @@ CREATE TABLE IF NOT EXISTS app_release_files (
 );
 
 CREATE INDEX IF NOT EXISTS idx_app_release_files_public ON app_release_files(app_id,status,version_code);
+CREATE TABLE IF NOT EXISTS resource_reviews (
+  id TEXT PRIMARY KEY,
+  resource_id TEXT NOT NULL,
+  reviewed_by TEXT NOT NULL,
+  decision TEXT NOT NULL CHECK (decision IN ('approved','rejected','suspended')),
+  comment TEXT NOT NULL DEFAULT '',
+  created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
+  FOREIGN KEY (resource_id) REFERENCES published_resources(id) ON DELETE CASCADE,
+  FOREIGN KEY (reviewed_by) REFERENCES users(id)
+);
+CREATE INDEX IF NOT EXISTS idx_resource_reviews_resource ON resource_reviews(resource_id,created_at);
