@@ -1,0 +1,49 @@
+name: Vérification NKJJEAN STUDIO
+
+on:
+  push:
+    branches:
+      - main
+      - codex/nkjjean-studio-platform
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  verification:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Récupérer le dépôt
+        uses: actions/checkout@v4
+
+      - name: Installer Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Vérifier la syntaxe du Worker
+        run: |
+          cp Index.ts /tmp/nkjjean-worker.js
+          node --check /tmp/nkjjean-worker.js
+
+      - name: Vérifier la migration D1 avec SQLite
+        run: |
+          python3 - <<'PY'
+          import sqlite3
+          from pathlib import Path
+
+          db = sqlite3.connect(":memory:")
+          db.execute("PRAGMA foreign_keys = ON")
+          db.execute("CREATE TABLE users (id TEXT PRIMARY KEY)")
+          db.execute("CREATE TABLE projects (id TEXT PRIMARY KEY, user_id TEXT REFERENCES users(id))")
+          sql = Path("migrations/0002_project_workspace.sql").read_text(encoding="utf-8")
+          db.executescript(sql)
+          tables = {
+              row[0] for row in db.execute(
+                  "SELECT name FROM sqlite_master WHERE type='table'"
+              )
+          }
+          required = {"project_conversations", "project_messages"}
+          assert required.issubset(tables), f"Tables manquantes : {required - tables}"
+          print("Migration SQL valide : conversations et messages créés.")
+          PY
