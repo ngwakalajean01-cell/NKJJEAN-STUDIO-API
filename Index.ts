@@ -1373,6 +1373,25 @@ async function studioHandleApi(request, env, url) {
   // Administration : compte administrateur défini explicitement dans D1.
   if(parts[0]==="api"&&parts[1]==="admin"){
     if(user.role!=="admin")return jsonResponse({error:"Accès réservé à l'administration."},403);
+    if(parts.length===5&&parts[2]==="apps"&&parts[4]==="releases"&&request.method==="GET"){
+      const r=await env.DB.prepare("SELECT id,version_name,version_code,file_name,file_size,changelog,status,created_at FROM app_release_files WHERE app_id=? ORDER BY version_code DESC").bind(parts[3]).all();
+      return jsonResponse({success:true,releases:(r.results||[]).map(x=>({...x,review_download:"/api/admin/download/app/"+encodeURIComponent(x.id)}))});
+    }
+    if(parts.length===5&&parts[2]==="resources"&&parts[4]==="files"&&request.method==="GET"){
+      const r=await env.DB.prepare("SELECT id,file_name,mime_type,file_size,status,created_at FROM resource_files WHERE resource_id=? ORDER BY created_at DESC").bind(parts[3]).all();
+      return jsonResponse({success:true,files:(r.results||[]).map(x=>({...x,review_download:"/api/admin/download/resource/"+encodeURIComponent(x.id)}))});
+    }
+    if(parts.length===5&&parts[2]==="download"&&["app","resource"].includes(parts[3])&&request.method==="GET"){
+      if(!env.APP_FILES||typeof env.APP_FILES.get!=="function")return jsonResponse({error:"Stockage R2 non configuré."},503);
+      const file=parts[3]==="app"
+        ? await env.DB.prepare("SELECT object_key,file_name,mime_type,file_size FROM app_release_files WHERE id=? LIMIT 1").bind(parts[4]).first()
+        : await env.DB.prepare("SELECT object_key,file_name,mime_type,file_size FROM resource_files WHERE id=? LIMIT 1").bind(parts[4]).first();
+      if(!file)return jsonResponse({error:"Fichier introuvable."},404);
+      const object=await env.APP_FILES.get(file.object_key);
+      if(!object)return jsonResponse({error:"Fichier absent du stockage."},404);
+      const safeName=String(file.file_name||"fichier").replace(/[\\r\\n"]/g,"_");
+      return new Response(object.body,{headers:{"Content-Type":file.mime_type||"application/octet-stream","Content-Length":String(file.file_size||object.size||0),"Content-Disposition":"attachment; filename*=UTF-8''"+encodeURIComponent(safeName),"Cache-Control":"private, no-store","X-Content-Type-Options":"nosniff"}});
+    }
     if(parts.length===3&&parts[2]==="overview"&&request.method==="GET"){
       const c=await Promise.all([
         env.DB.prepare("SELECT COUNT(*) AS n FROM users").first(),
@@ -1395,7 +1414,7 @@ async function studioHandleApi(request, env, url) {
       }});
     }
     if(parts.length===4&&parts[2]==="resources"&&parts[3]==="pending"&&request.method==="GET"){
-      const r=await env.DB.prepare("SELECT r.id,r.user_id,r.resource_type AS type,r.title,r.slug,r.description,r.category,r.status,r.created_at,u.email AS owner_email FROM published_resources r JOIN users u ON u.id=r.user_id WHERE r.status='pending_review' ORDER BY r.created_at").all();
+      const r=await env.DB.prepare("SELECT r.id,r.user_id,r.resource_type AS type,r.title,r.slug,r.description,r.category,r.status,r.created_at,u.email AS owner_email,(SELECT COUNT(*) FROM resource_files f WHERE f.resource_id=r.id AND f.status='pending_review') AS pending_files FROM published_resources r JOIN users u ON u.id=r.user_id WHERE r.status='pending_review' ORDER BY r.created_at").all();
       return jsonResponse({success:true,resources:r.results||[]});
     }
     if(parts.length===4&&parts[2]==="resources"&&request.method==="POST"){
@@ -1420,7 +1439,7 @@ async function studioHandleApi(request, env, url) {
       return jsonResponse({success:true,items:[...(apps.results||[]),...(resources.results||[])].sort((a,b)=>String(b.published_at||"").localeCompare(String(a.published_at||"")))});
     }
     if(parts.length===4&&parts[2]==="publications"&&parts[3]==="pending"&&request.method==="GET"){
-      const r=await env.DB.prepare("SELECT a.id,a.user_id,a.name,a.slug,a.description,a.category,a.status,a.created_at,u.email AS owner_email FROM published_apps a JOIN users u ON u.id=a.user_id WHERE a.status='pending_review' ORDER BY a.created_at").all();
+      const r=await env.DB.prepare("SELECT a.id,a.user_id,a.name,a.slug,a.description,a.category,a.status,a.created_at,u.email AS owner_email,(SELECT COUNT(*) FROM app_release_files f WHERE f.app_id=a.id AND f.status='pending_review') AS pending_files FROM published_apps a JOIN users u ON u.id=a.user_id WHERE a.status='pending_review' ORDER BY a.created_at").all();
       return jsonResponse({success:true,apps:r.results||[]});
     }
     if(parts.length===3&&parts[2]==="publication-orders"&&request.method==="GET"){
