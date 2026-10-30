@@ -26,6 +26,8 @@ function randomHex(bytes = 32) {
     .join("");
 }
 
+const PBKDF2_ITERATIONS = 100000;
+
 async function passwordHash(password) {
   const salt = crypto.getRandomValues(new Uint8Array(16));
 
@@ -41,7 +43,7 @@ async function passwordHash(password) {
     {
       name: "PBKDF2",
       salt,
-      iterations: 250000,
+      iterations: PBKDF2_ITERATIONS,
       hash: "SHA-256"
     },
     key,
@@ -56,7 +58,7 @@ async function passwordHash(password) {
     .map(value => value.toString(16).padStart(2, "0"))
     .join("");
 
-  return `pbkdf2-sha256$250000$${saltHex}$${hashHex}`;
+  return `pbkdf2-sha256${PBKDF2_ITERATIONS}${saltHex}${hashHex}`;
 }
 
 async function verifyPassword(password, stored) {
@@ -74,8 +76,7 @@ async function verifyPassword(password, stored) {
 
   if (
     !Number.isInteger(iterations) ||
-    iterations < 100000 ||
-    iterations > 1000000 ||
+    iterations !== PBKDF2_ITERATIONS ||
     !/^[a-f0-9]{32}$/i.test(saltHex) ||
     !/^[a-f0-9]{64}$/i.test(expectedHex)
   ) {
