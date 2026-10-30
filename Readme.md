@@ -63,7 +63,16 @@ La réponse attendue est un objet JSON contenant `success`, `answer`, `model` et
 
 ### Moteur IA privé requis
 
-Le Worker API appelle un second Worker privé nommé `nkjjean-ai-engine` au moyen d'une Service Binding Cloudflare appelée `NKJ_AI`. Le moteur doit accepter `POST https://nkjjean-ai.internal/v1/generate` et renvoyer un JSON avec au minimum `answer`. Aucun appel Gemini, OpenAI ou autre fournisseur externe n'est effectué.
+Le Worker API appelle un second Worker privé nommé `nkjjean-ai-engine` au moyen d'une Service Binding Cloudflare appelée `NKJ_AI`. Le moteur doit accepter `POST https://nkjjean-ai.internal/v1/generate` et renvoyer un JSON avec au minimum `answer`, idéalement `model` et `usage.input_tokens / usage.output_tokens`. Aucun appel Gemini, OpenAI ou autre fournisseur externe n'est effectué.
+
+Pour relier le moteur après son déploiement :
+1. Dans Cloudflare, ouvre le Worker `nkjjean-studio-api`.
+2. Va dans **Settings → Bindings → Add → Service binding**.
+3. Indique `NKJ_AI` comme Variable name.
+4. Sélectionne le Worker privé `nkjjean-ai-engine`.
+5. Enregistre et déploie le Worker appelant.
+
+Le Worker cible doit appartenir au même compte Cloudflare. La liaison Service Binding envoie les appels directement d'un Worker à l'autre sans passer par une URL publique ni par le réseau Internet. (Documentation : https://developers.cloudflare.com/workers/runtime-apis/bindings/service-bindings/)
 
 **État actuel :** l'interface, l'API de passerelle et le contrôle des quotas sont préparés. Le Worker de génération propriétaire et son modèle ne sont pas encore déployés. Sans la liaison privée `NKJ_AI`, l'API répond explicitement `AI_ENGINE_NOT_CONFIGURED` et ne fabrique aucune réponse.
 
