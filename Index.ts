@@ -571,7 +571,10 @@ async function studioHandleApi(request, env, url) {
       const recent = await env.DB.prepare(
         "SELECT e.id,e.user_id,u.email,e.event_type,e.country_code,e.region_name,e.created_at FROM surveillance_events e LEFT JOIN users u ON u.id=e.user_id ORDER BY e.created_at DESC LIMIT 100"
       ).all();
-      return jsonResponse({success:true,totals,users:users.results||[],events:recent.results||[]});
+      const projects = await env.DB.prepare(
+        "SELECT p.id,p.user_id,u.email,p.name,p.status,p.created_at,q.requests_limit,q.tokens_limit,q.daily_limit,q.monthly_limit,q.free_access FROM projects p JOIN users u ON u.id=p.user_id LEFT JOIN project_quotas q ON q.project_id=p.id ORDER BY p.created_at DESC LIMIT 300"
+      ).all();
+      return jsonResponse({success:true,totals,users:users.results||[],events:recent.results||[],projects:projects.results||[]});
     }
     if (path === "/api/surveillance/events" && request.method === "GET") {
       const result=await env.DB.prepare("SELECT e.id,e.user_id,u.email,e.event_type,e.country_code,e.region_name,e.created_at FROM surveillance_events e LEFT JOIN users u ON u.id=e.user_id ORDER BY e.created_at DESC LIMIT 300").all();
@@ -591,6 +594,17 @@ async function studioHandleApi(request, env, url) {
         env.DB.prepare("INSERT INTO surveillance_audit_log (id,admin_user_id,target_user_id,action,details_json) VALUES (?,?,?,?,?)").bind(randomHex(16),user.id,targetId,"user_status",JSON.stringify({status,email:target.email}))
       ]);
       return jsonResponse({success:true,message:status==="active"?"Compte réactivé.":"Compte suspendu et sessions révoquées."});
+    }
+    if (parts.length===4 && parts[2]==="users" && parts[3] && request.method==="GET") {
+      const targetId=parts[3];
+      const target=await env.DB.prepare("SELECT id,email,role,status FROM users WHERE id=? LIMIT 1").bind(targetId).first();
+      if(!target)return jsonResponse({error:"Compte introuvable."},404);
+      const [projects,events,messages]=await Promise.all([
+        env.DB.prepare("SELECT p.id,p.name,p.status,p.created_at,q.requests_limit,q.tokens_limit,q.daily_limit,q.monthly_limit,q.free_access FROM projects p LEFT JOIN project_quotas q ON q.project_id=p.id WHERE p.user_id=? ORDER BY p.created_at DESC").bind(targetId).all(),
+        env.DB.prepare("SELECT event_type,country_code,region_name,created_at FROM surveillance_events WHERE user_id=? ORDER BY created_at DESC LIMIT 100").bind(targetId).all(),
+        env.DB.prepare("SELECT id,message,created_at,read_at FROM admin_user_messages WHERE user_id=? ORDER BY created_at DESC LIMIT 50").bind(targetId).all()
+      ]);
+      return jsonResponse({success:true,user:target,projects:projects.results||[],events:events.results||[],messages:messages.results||[]});
     }
     if (parts.length===4 && parts[2]==="users" && parts[3] && request.method==="DELETE") {
       const targetId=parts[3];
@@ -625,12 +639,25 @@ async function studioHandleApi(request, env, url) {
       if([requests,tokens,daily,monthly].some(x=>!Number.isSafeInteger(x)||x<0||x>1000000000))return jsonResponse({error:"Les quotas doivent être des nombres entiers positifs valides."},400);
       const free=body.free_access===true?1:0;
       await env.DB.batch([
-        env.DB.prepare("UPDATE project_quotas SET requests_limit=?,tokens_limit=?,daily_limit=?,monthly_limit=?,free_access=? WHERE project_id=?").bind(requests,tokens,daily,monthly,free,projectId),
+        env.DB.prepare("INSERT INTO project_quotas (project_id,requests_limit,tokens_limit,daily_limit,monthly_limit,free_access) VALUES (?,?,?,?,?,?) ON CONFLICT(project_id) DO UPDATE SET requests_limit=excluded.requests_limit,tokens_limit=excluded.tokens_limit,daily_limit=excluded.daily_limit,monthly_limit=excluded.monthly_limit,free_access=excluded.free_access").bind(projectId,requests,tokens,daily,monthly,free),
         env.DB.prepare("INSERT INTO surveillance_audit_log (id,admin_user_id,target_user_id,action,details_json) VALUES (?,?,?,?,?)").bind(randomHex(16),user.id,project.user_id,"project_quota",JSON.stringify({project_id:projectId,requests,tokens,daily,monthly,free_access:!!free}))
       ]);
       return jsonResponse({success:true,message:"Quotas du projet mis à jour."});
     }
     return jsonResponse({error:"Action de surveillance introuvable."},404);
+  }
+
+  // Boîte de réception des messages envoyés par l'administration.
+  if (path === "/api/messages" && request.method === "GET") {
+    const result=await env.DB.prepare("SELECT id,message,created_at,read_at FROM admin_user_messages WHERE user_id=? ORDER BY created_at DESC LIMIT 100").bind(user.id).all();
+    return jsonResponse({success:true,messages:result.results||[]});
+  }
+  if (path === "/api/messages" && request.method === "POST") {
+    const body=await studioReadBody(request),messageId=studioText(body.message_id,80);
+    if(!messageId)return jsonResponse({error:"Identifiant du message manquant."},400);
+    const result=await env.DB.prepare("UPDATE admin_user_messages SET read_at=? WHERE id=? AND user_id=? AND read_at IS NULL").bind(new Date().toISOString(),messageId,user.id).run();
+    if(!result.meta||!result.meta.changes)return jsonResponse({error:"Message introuvable ou déjà lu."},404);
+    return jsonResponse({success:true});
   }
 
   // Projets personnels.
