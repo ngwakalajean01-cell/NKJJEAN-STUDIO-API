@@ -5,9 +5,14 @@ on:
     branches:
       - main
       - codex/nkjjean-studio-platform
+      - preparation/nkjjean-ai-rtx3090
   pull_request:
     branches:
       - main
+
+concurrency:
+  group: validation-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   verification:
@@ -23,8 +28,7 @@ jobs:
 
       - name: Vérifier la syntaxe du Worker
         run: |
-          cp Index.ts /tmp/nkjjean-worker.js
-          node --check /tmp/nkjjean-worker.js
+          node --input-type=module --check < Index.ts
 
       - name: Tester le hachage des mots de passe et les anciens comptes
         run: node tests/auth-password.test.cjs
@@ -42,14 +46,17 @@ jobs:
           db.execute("PRAGMA foreign_keys = ON")
           db.execute("CREATE TABLE users (id TEXT PRIMARY KEY)")
           db.execute("CREATE TABLE projects (id TEXT PRIMARY KEY, user_id TEXT REFERENCES users(id))")
+          db.execute("CREATE TABLE published_apps (id TEXT PRIMARY KEY)")
           sql = Path("migrations/0002_project_workspace.sql").read_text(encoding="utf-8")
+          db.executescript(sql)
+          sql = Path("migrations/0003_public_catalog_and_files.sql").read_text(encoding="utf-8")
           db.executescript(sql)
           tables = {
               row[0] for row in db.execute(
                   "SELECT name FROM sqlite_master WHERE type='table'"
               )
           }
-          required = {"project_conversations", "project_messages"}
+          required = {"project_conversations", "project_messages", "published_resources", "resource_files", "app_release_files", "resource_reviews"}
           assert required.issubset(tables), f"Tables manquantes : {required - tables}"
-          print("Migration SQL valide : conversations et messages créés.")
+          print("Migrations SQL valides : espace projet et catalogue public créés.")
           PY
