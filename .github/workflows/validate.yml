@@ -60,8 +60,8 @@ jobs:
           assert.match(source, /short_name: "NKJ-STU"/);
           assert.match(source, /name: "NKJ-SURV-PLAT"/);
           assert.match(source, /short_name: "NKJ"/);
-          assert.match(source, /fill="#edf6ff">NKJ<\\/text>/);
-          assert.match(source, /fill="#65e0df">STU<\\/text>/);
+          assert.match(source, /fill="#edf6ff">NKJ<\/text>/);
+          assert.match(source, /fill="#65e0df">STU<\/text>/);
           assert.match(source, /start_url: "\/nkj-surv-plat"/);
           assert.match(source, /studioPwaResponse\(NKJ_SURV_PLAT_HTML, \{ appType: "surveillance"/);
           assert.match(source, /studioPwaResponse\(NKJ_SURV_PLAT_HTML, \{ appType: "surveillance"/);
