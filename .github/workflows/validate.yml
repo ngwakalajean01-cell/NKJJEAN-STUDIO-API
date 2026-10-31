@@ -46,7 +46,7 @@ jobs:
 
           db = sqlite3.connect(":memory:")
           db.execute("PRAGMA foreign_keys = ON")
-          db.execute("CREATE TABLE users (id TEXT PRIMARY KEY, status TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('user', 'admin')))")
+          db.execute("CREATE TABLE users (id TEXT PRIMARY KEY, status TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'suspended', 'pending')))")
           db.execute("CREATE TABLE projects (id TEXT PRIMARY KEY, user_id TEXT REFERENCES users(id))")
           db.execute("CREATE TABLE published_apps (id TEXT PRIMARY KEY)")
           sql = Path("migrations/0002_project_workspace.sql").read_text(encoding="utf-8")
@@ -66,15 +66,15 @@ jobs:
           assert "deleted_at" in user_columns, "Colonne users.deleted_at manquante"
           message_columns = {row[1] for row in db.execute("PRAGMA table_info(admin_user_messages)")}
           assert "expires_at" in message_columns, "Colonne admin_user_messages.expires_at manquante"
-          db.execute("INSERT INTO users (id, status) VALUES ('client-test', 'user')")
+          db.execute("INSERT INTO users (id, status) VALUES ('client-test', 'active')")
           db.execute("UPDATE users SET status='suspended', deleted_at='2026-10-31T00:00:00Z' WHERE id='client-test'")
-          db.execute("UPDATE users SET status='user', deleted_at=NULL WHERE id='client-test'")
+          db.execute("UPDATE users SET status='active', deleted_at=NULL WHERE id='client-test'")
           try:
               db.execute("UPDATE users SET status='deleted' WHERE id='client-test'")
               raise AssertionError("Le statut interdit 'deleted' a ete accepte")
           except sqlite3.IntegrityError:
               pass
-          db.execute("INSERT INTO users (id, status) VALUES ('admin-test', 'admin')")
+          db.execute("INSERT INTO users (id, status) VALUES ('admin-test', 'active')")
           db.execute("INSERT INTO admin_user_messages (id, user_id, admin_user_id, message) VALUES ('msg-test', 'client-test', 'admin-test', 'Message de test')")
           created, expires = db.execute("SELECT created_at, expires_at FROM admin_user_messages WHERE id='msg-test'").fetchone()
           hours = db.execute("SELECT (julianday(?) - julianday(?)) * 24", (expires, created)).fetchone()[0]
