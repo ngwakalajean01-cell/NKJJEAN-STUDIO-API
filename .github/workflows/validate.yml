@@ -6,9 +6,11 @@ on:
       - main
       - codex/nkjjean-studio-platform
       - preparation/nkjjean-ai-rtx3090
+      - feature/nkj-surv-plat
   pull_request:
     branches:
       - main
+      - preparation/nkjjean-ai-rtx3090
 
 concurrency:
   group: validation-${{ github.ref }}
@@ -51,12 +53,14 @@ jobs:
           db.executescript(sql)
           sql = Path("migrations/0003_public_catalog_and_files.sql").read_text(encoding="utf-8")
           db.executescript(sql)
+          sql = Path("migrations/0004_nkj_surv_plat.sql").read_text(encoding="utf-8")
+          db.executescript(sql)
           tables = {
               row[0] for row in db.execute(
                   "SELECT name FROM sqlite_master WHERE type='table'"
               )
           }
-          required = {"project_conversations", "project_messages", "published_resources", "resource_files", "app_release_files", "resource_reviews"}
+          required = {"project_conversations", "project_messages", "published_resources", "resource_files", "app_release_files", "resource_reviews", "surveillance_events", "admin_user_messages", "surveillance_audit_log"}
           assert required.issubset(tables), f"Tables manquantes : {required - tables}"
-          print("Migrations SQL valides : espace projet et catalogue public créés.")
+          print("Migrations SQL valides : espace projet, catalogue public et surveillance créés.")
           PY
