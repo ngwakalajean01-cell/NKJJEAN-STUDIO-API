@@ -414,6 +414,7 @@ const STUDIO_STORE_HTML = `<!DOCTYPE html><html lang="fr"><head><meta charset="U
 
 async function studioHandleApi(request, env, url) {
   const path = url.pathname;
+  const storageConfigured = studioStorageConfigured(env);
   if (path === "/api/health" && request.method === "GET") {
     let databaseConnected = false;
     if (env.DB) {
@@ -436,7 +437,7 @@ async function studioHandleApi(request, env, url) {
         ])
       : [false, false, false, false, false, false, false];
 
-    const storageReady = await studioStorageReady(env);
+    const storageConfigured = await studioStorageReady(env);
     return jsonResponse({
       success: true,
       service: "NKJJEAN STUDIO",
@@ -450,7 +451,7 @@ async function studioHandleApi(request, env, url) {
         own_ai_engine_connected: !!(env.NKJ_AI && typeof env.NKJ_AI.fetch === "function")
       },
       services: {
-        private_file_storage: storageReady,
+        private_file_storage: storageConfigured,
         payment_gateway: "not_configured",
         own_ai_model: env.NKJ_AI && typeof env.NKJ_AI.fetch === "function" ? "engine_connected_model_readiness_unverified" : "not_deployed"
       }
@@ -522,7 +523,7 @@ async function studioHandleApi(request, env, url) {
   }
 
   if (path.startsWith("/api/download/") && request.method === "GET") {
-    if (!storageReady) return jsonResponse({error:"Le stockage sécurisé des fichiers n'est pas encore configuré.",code:"PRIVATE_STORAGE_NOT_CONFIGURED"},503);
+    if (!storageConfigured) return jsonResponse({error:"Le stockage sécurisé des fichiers n'est pas encore configuré.",code:"PRIVATE_STORAGE_NOT_CONFIGURED"},503);
     const parts = path.split("/").filter(Boolean);
     if (parts.length !== 4 || !["app","resource"].includes(parts[2])) return jsonResponse({error:"Lien de téléchargement invalide."},404);
     const fileId = parts[3];
@@ -533,7 +534,7 @@ async function studioHandleApi(request, env, url) {
       file = await env.DB.prepare("SELECT f.object_key,f.file_name,f.mime_type,f.file_size FROM app_release_files f JOIN published_apps a ON a.id=f.app_id WHERE f.id=? AND f.status='approved' AND a.status='published' LIMIT 1").bind(fileId).first();
     }
     if (!file) return jsonResponse({error:"Fichier introuvable ou non publié."},404);
-    const object = await await studioStorageGet(env,file.object_key);
+    const object = await studioStorageGet(env,file.object_key);
     if (!object) return jsonResponse({error:"Le fichier n'est plus disponible dans le stockage."},404);
     const safeName = String(file.file_name||"telechargement").replace(/[\\r\\n"]/g,"_");
     return new Response(object.body,{status:200,headers:{
@@ -855,7 +856,7 @@ async function studioHandleApi(request, env, url) {
     }
     if(parts.length===4&&parts[3]==="files"&&request.method==="POST"){
       if(!["draft","rejected"].includes(resource.status))return jsonResponse({error:"Ajoute les fichiers avant de soumettre la ressource."},409);
-      if(!storageReady)return jsonResponse({error:"Le stockage sécurisé des fichiers n'est pas configuré.",code:"PRIVATE_STORAGE_NOT_CONFIGURED"},503);
+      if(!storageConfigured)return jsonResponse({error:"Le stockage sécurisé des fichiers n'est pas configuré.",code:"PRIVATE_STORAGE_NOT_CONFIGURED"},503);
       const form=await request.formData(),file=form.get("file");
       if(!file||typeof file.arrayBuffer!=="function")return jsonResponse({error:"Sélectionne un fichier à envoyer."},400);
       if(file.size<1||file.size>50*1024*1024)return jsonResponse({error:"Le fichier doit peser au maximum 50 Mo."},413);
@@ -863,10 +864,10 @@ async function studioHandleApi(request, env, url) {
       const mime=String(file.type||"application/octet-stream").toLowerCase();
       if(!allowed.has(mime))return jsonResponse({error:"Format non accepté. Utilise PDF, DOCX, PPTX, ZIP, MP4, JPEG ou PNG."},415);
       const id=randomHex(16),key="resources/"+user.id+"/"+resourceId+"/"+id;
-      await await studioStoragePut(env,key,await file.arrayBuffer(),mime);
+      await studioStoragePut(env,key,await file.arrayBuffer(),mime);
       try{
         await env.DB.prepare("INSERT INTO resource_files (id,resource_id,file_name,mime_type,file_size,object_key,status) VALUES (?,?,?,?,?,?,'pending_review')").bind(id,resourceId,String(file.name||"fichier").slice(0,180),mime,file.size,key).run();
-      }catch(error){await await studioStorageDelete(env,key);throw error;}
+      }catch(error){await studioStorageDelete(env,key);throw error;}
       return jsonResponse({success:true,file:{id,name:String(file.name||"fichier"),size:file.size,status:"pending_review"}},201);
     }
     if(parts.length===4&&parts[3]==="submit"&&request.method==="POST"){
@@ -878,7 +879,7 @@ async function studioHandleApi(request, env, url) {
     if(parts.length===3&&request.method==="DELETE"){
       if(["published","pending_review","suspended"].includes(resource.status))return jsonResponse({error:"Cette ressource doit d'abord être clôturée par l'administration."},409);
       const files=await env.DB.prepare("SELECT object_key FROM resource_files WHERE resource_id=?").bind(resourceId).all();
-      if(storageReady)for(const file of files.results||[])await studioStorageDelete(env,file.object_key);
+      if(storageConfigured)for(const file of files.results||[])await studioStorageDelete(env,file.object_key);
       await env.DB.prepare("DELETE FROM published_resources WHERE id=? AND user_id=?").bind(resourceId,user.id).run();
       return jsonResponse({success:true});
     }
@@ -914,7 +915,7 @@ async function studioHandleApi(request, env, url) {
     if(parts.length===3&&request.method==="DELETE"){
       if(["published","pending_review","suspended"].includes(app.status))return jsonResponse({error:"Cette fiche doit d'abord être clôturée par l'administration."},409);
       const storedFiles=await env.DB.prepare("SELECT object_key FROM app_release_files WHERE app_id=?").bind(appId).all();
-      if(storageReady)for(const stored of storedFiles.results||[])await studioStorageDelete(env,stored.object_key);
+      if(storageConfigured)for(const stored of storedFiles.results||[])await studioStorageDelete(env,stored.object_key);
       await env.DB.prepare("DELETE FROM published_apps WHERE id=? AND user_id=?").bind(appId,user.id).run();
       return jsonResponse({success:true,message:"Fiche supprimée."});
     }
@@ -928,15 +929,15 @@ async function studioHandleApi(request, env, url) {
 
     if(parts.length===4&&parts[3]==="releases"&&request.method==="POST"){
       if(!["draft","rejected"].includes(app.status))return jsonResponse({error:"Dépose une nouvelle version avant de soumettre la fiche."},409);
-      if(!storageReady)return jsonResponse({error:"Le stockage sécurisé des APK n'est pas configuré.",code:"PRIVATE_STORAGE_NOT_CONFIGURED"},503);
+      if(!storageConfigured)return jsonResponse({error:"Le stockage sécurisé des APK n'est pas configuré.",code:"PRIVATE_STORAGE_NOT_CONFIGURED"},503);
       const form=await request.formData(),file=form.get("file"),versionName=studioText(form.get("version_name"),40),versionCode=Number(form.get("version_code")),changelog=studioText(form.get("changelog"),2000);
       if(!file||typeof file.arrayBuffer!=="function"||!String(file.name||"").toLowerCase().endsWith(".apk"))return jsonResponse({error:"Sélectionne un fichier APK valide."},400);
       if(!Number.isInteger(versionCode)||versionCode<1||!versionName)return jsonResponse({error:"Nom et code de version valides obligatoires."},400);
-      if(file.size<1||file.size>100*1024*1024)return jsonResponse({error:"L'APK doit peser au maximum 100 Mo."},413);
+      if(file.size<1||file.size>50*1024*1024)return jsonResponse({error:"L'APK doit peser au maximum 50 Mo avec le stockage privé actuel."},413);
       const mime="application/vnd.android.package-archive",id=randomHex(16),key="apps/"+user.id+"/"+appId+"/"+id+".apk";
-      await await studioStoragePut(env,key,await file.arrayBuffer(),mime);
+      await studioStoragePut(env,key,await file.arrayBuffer(),mime);
       try{await env.DB.prepare("INSERT INTO app_release_files (id,app_id,version_name,version_code,file_name,mime_type,file_size,changelog,object_key,status) VALUES (?,?,?,?,?,?,?,?,?,'pending_review')").bind(id,appId,versionName,versionCode,String(file.name||"application.apk").slice(0,180),mime,file.size,changelog,key).run();}
-      catch(error){await await studioStorageDelete(env,key);return jsonResponse({error:"Cette version existe déjà ou n'a pas pu être enregistrée."},409);}
+      catch(error){await studioStorageDelete(env,key);return jsonResponse({error:"Cette version existe déjà ou n'a pas pu être enregistrée."},409);}
       return jsonResponse({success:true,release:{id,version_name:versionName,version_code:versionCode,status:"pending_review"}},201);
     }
     if(parts.length===4&&parts[3]==="versions"&&request.method==="POST"){
@@ -962,12 +963,12 @@ async function studioHandleApi(request, env, url) {
       return jsonResponse({success:true,files:(r.results||[]).map(x=>({...x,review_download:"/api/admin/download/resource/"+encodeURIComponent(x.id)}))});
     }
     if(parts.length===5&&parts[2]==="download"&&["app","resource"].includes(parts[3])&&request.method==="GET"){
-      if(!storageReady)return jsonResponse({error:"Stockage R2 non configuré."},503);
+      if(!storageConfigured)return jsonResponse({error:"Stockage R2 non configuré."},503);
       const file=parts[3]==="app"
         ? await env.DB.prepare("SELECT object_key,file_name,mime_type,file_size FROM app_release_files WHERE id=? LIMIT 1").bind(parts[4]).first()
         : await env.DB.prepare("SELECT object_key,file_name,mime_type,file_size FROM resource_files WHERE id=? LIMIT 1").bind(parts[4]).first();
       if(!file)return jsonResponse({error:"Fichier introuvable."},404);
-      const object=await await studioStorageGet(env,file.object_key);
+      const object=await studioStorageGet(env,file.object_key);
       if(!object)return jsonResponse({error:"Fichier absent du stockage."},404);
       const safeName=String(file.file_name||"fichier").replace(/[\\r\\n"]/g,"_");
       return new Response(object.body,{headers:{"Content-Type":file.mime_type||"application/octet-stream","Content-Length":String(file.file_size||object.size||0),"Content-Disposition":"attachment; filename*=UTF-8''"+encodeURIComponent(safeName),"Cache-Control":"private, no-store","X-Content-Type-Options":"nosniff"}});
