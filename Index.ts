@@ -995,6 +995,61 @@ async function studioHandleApi(request, env, url) {
 }
 
 
+
+// ==================== INSTALLATION PWA NKJJEAN STUDIO ====================
+// Les pages privées restent réseau uniquement : aucune session/API n'est mise en cache.
+const STUDIO_PWA_ICON = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#12395b"/><stop offset="1" stop-color="#061321"/></linearGradient></defs><rect width="512" height="512" rx="112" fill="url(#g)"/><path d="M80 350V162h55l85 112V162h57v188h-52l-88-116v116z" fill="#65e0df"/><path d="M300 162h132v48h-75v25h67v45h-67v25h75v45H300z" fill="#edf6ff"/><circle cx="426" cy="91" r="23" fill="#65e0df"/></svg>`;
+
+function studioPwaResponse(html, options = {}) {
+  const headers = new Headers(options.headers || {});
+  headers.set("Content-Type", "text/html;charset=UTF-8");
+  headers.set("X-Content-Type-Options", "nosniff");
+  const head = `
+<link rel="manifest" href="/manifest.webmanifest">
+<meta name="theme-color" content="#07111f">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="NKJJEAN STUDIO">
+<link rel="icon" href="/pwa-icon.svg" type="image/svg+xml">
+<style id="nkj-pwa-install-style">#nkjPwaInstall{position:fixed;left:12px;bottom:12px;z-index:99999;border:1px solid #65e0df;border-radius:999px;padding:10px 15px;background:#10243a;color:#edf6ff;font:700 13px system-ui;box-shadow:0 5px 22px #0008;display:none}#nkjPwaInstall:focus{outline:3px solid #65e0df;outline-offset:3px}</style>`;
+  const script = `
+<script id="nkj-pwa-install-script">
+(()=> {
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", () => navigator.serviceWorker.register("/service-worker.js", {scope:"/"}).catch(() => {}));
+  }
+  let installPrompt = null;
+  const button = document.createElement("button");
+  button.id = "nkjPwaInstall";
+  button.type = "button";
+  button.textContent = "Installer NKJJEAN STUDIO";
+  button.setAttribute("aria-label","Installer NKJJEAN STUDIO sur cet appareil");
+  document.body.appendChild(button);
+  window.addEventListener("beforeinstallprompt", event => {
+    event.preventDefault();
+    installPrompt = event;
+    button.style.display = "block";
+  });
+  button.addEventListener("click", async () => {
+    if (!installPrompt) return;
+    installPrompt.prompt();
+    try { await installPrompt.userChoice; } catch (_) {}
+    installPrompt = null;
+    button.style.display = "none";
+  });
+  window.addEventListener("appinstalled", () => {
+    installPrompt = null;
+    button.style.display = "none";
+  });
+})();
+</script>`;
+  let output = String(html);
+  if (output.includes("</head>")) output = output.replace("</head>", head + "</head>");
+  if (output.includes("</body>")) output = output.replace("</body>", script + "</body>");
+  return new Response(output, {...options, headers});
+}
+
 // ==================== WORKER PRINCIPAL ====================
 
 export default {
@@ -1010,6 +1065,51 @@ export default {
       }});
     }
 
+
+
+    // Ressources publiques PWA. Le service worker ne met en cache ni API, ni espace privé.
+    if (url.pathname === "/manifest.webmanifest" && request.method === "GET") {
+      return new Response(JSON.stringify({
+        id: "/",
+        name: "NKJJEAN STUDIO",
+        short_name: "NKJJEAN",
+        description: "Plateforme numérique NKJJEAN STUDIO",
+        lang: "fr",
+        start_url: "/",
+        scope: "/",
+        display: "standalone",
+        display_override: ["standalone", "minimal-ui"],
+        orientation: "any",
+        background_color: "#07111f",
+        theme_color: "#07111f",
+        icons: [{src:"/pwa-icon.svg",sizes:"192x192 512x512",type:"image/svg+xml",purpose:"any maskable"}]
+      }), {headers:{"Content-Type":"application/manifest+json;charset=UTF-8","Cache-Control":"public, max-age=3600","X-Content-Type-Options":"nosniff"}});
+    }
+    if (url.pathname === "/pwa-icon.svg" && request.method === "GET") {
+      return new Response(STUDIO_PWA_ICON, {headers:{"Content-Type":"image/svg+xml;charset=UTF-8","Cache-Control":"public, max-age=604800","X-Content-Type-Options":"nosniff"}});
+    }
+    if (url.pathname === "/offline.html" && request.method === "GET") {
+      const offline = '<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#07111f"><title>Hors connexion — NKJJEAN STUDIO</title><style>body{margin:0;min-height:100vh;display:grid;place-items:center;background:#07111f;color:#edf6ff;font:16px system-ui;text-align:center}.box{max-width:520px;padding:28px}.box strong{color:#65e0df}</style></head><body><main class="box"><h1>NKJJEAN STUDIO</h1><strong>Connexion Internet indisponible</strong><p>Vos pages, votre compte et vos données restent protégés. Reconnectez-vous à Internet puis réessayez.</p><button onclick="location.reload()">Réessayer</button></main></body></html>';
+      return new Response(offline,{headers:{"Content-Type":"text/html;charset=UTF-8","Cache-Control":"no-store","X-Content-Type-Options":"nosniff"}});
+    }
+    if (url.pathname === "/service-worker.js" && request.method === "GET") {
+      const worker = `const CACHE_NAME = "nkjjean-studio-pwa-v1";
+const OFFLINE_PAGE = "/offline.html";
+self.addEventListener("install", event => {
+  event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.add(OFFLINE_PAGE)).then(() => self.skipWaiting()));
+});
+self.addEventListener("activate", event => {
+  event.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(key => key.startsWith("nkjjean-studio-pwa-") && key !== CACHE_NAME).map(key => caches.delete(key)))).then(() => self.clients.claim()));
+});
+self.addEventListener("fetch", event => {
+  const request = event.request;
+  if (request.method !== "GET" || request.mode !== "navigate") return;
+  const url = new URL(request.url);
+  if (url.origin !== self.location.origin) return;
+  event.respondWith(fetch(request).catch(async () => (await caches.match(OFFLINE_PAGE)) || Response.error()));
+});`;
+      return new Response(worker,{headers:{"Content-Type":"application/javascript;charset=UTF-8","Cache-Control":"no-cache","Service-Worker-Allowed":"/","X-Content-Type-Options":"nosniff"}});
+    }
 
     if (url.pathname === "/robots.txt" && request.method === "GET") {
       return new Response("User-agent: *\nAllow: /\nDisallow: /app\nDisallow: /admin\nDisallow: /studio/\nDisallow: /api/\nSitemap: "+url.origin+"/sitemap.xml\\n",{headers:{"Content-Type":"text/plain;charset=UTF-8","Cache-Control":"public, max-age=3600"}});
@@ -1029,22 +1129,22 @@ export default {
     }
 
     if (url.pathname === "/" && request.method === "GET") {
-      return new Response(STUDIO_HOME_HTML, { headers: { "Content-Type": "text/html;charset=UTF-8", "Cache-Control": "no-store" } });
+      return studioPwaResponse(STUDIO_HOME_HTML, { headers: { "Cache-Control": "no-store" } });
     }
     if (url.pathname === "/docs" && request.method === "GET") {
-      return new Response(STUDIO_DOCS_HTML, { headers: { "Content-Type": "text/html;charset=UTF-8", "Cache-Control": "no-store" } });
+      return studioPwaResponse(STUDIO_DOCS_HTML, { headers: { "Cache-Control": "no-store" } });
     }
     if (url.pathname === "/nkj-surv-plat" && request.method === "GET") {
-      return new Response(NKJ_SURV_PLAT_HTML, { headers: { "Content-Type": "text/html;charset=UTF-8", "Cache-Control": "no-store", "X-Robots-Tag": "noindex, nofollow" } });
+      return studioPwaResponse(NKJ_SURV_PLAT_HTML, { headers: { "Cache-Control": "no-store", "X-Robots-Tag": "noindex, nofollow" } });
     }
     if (url.pathname === "/admin" && request.method === "GET") {
-      return new Response(STUDIO_ADMIN_HTML, { headers: { "Content-Type": "text/html;charset=UTF-8", "Cache-Control": "no-store" } });
+      return studioPwaResponse(STUDIO_ADMIN_HTML, { headers: { "Cache-Control": "no-store" } });
     }
     if (url.pathname === "/app" && request.method === "GET") {
-      return new Response(STUDIO_APP_HTML, { headers: { "Content-Type": "text/html;charset=UTF-8", "Cache-Control": "no-store" } });
+      return studioPwaResponse(STUDIO_APP_HTML, { headers: { "Cache-Control": "no-store" } });
     }
     if (url.pathname.startsWith("/studio/") && request.method === "GET") {
-      return new Response(STUDIO_WORKSPACE_HTML, { headers: { "Content-Type": "text/html;charset=UTF-8", "Cache-Control": "no-store" } });
+      return studioPwaResponse(STUDIO_WORKSPACE_HTML, { headers: { "Cache-Control": "no-store" } });
     }
     if ((url.pathname === "/applications" || url.pathname.startsWith("/applications/") ||
          url.pathname === "/cours" || url.pathname.startsWith("/cours/") ||
@@ -1065,7 +1165,7 @@ export default {
             .replace('<meta name="robots" content="index,follow">','<meta name="robots" content="index,follow"><link rel="canonical" href="'+url.origin+url.pathname+'">');
         }
       }
-      return new Response(html, { headers: { "Content-Type": "text/html;charset=UTF-8", "Cache-Control": "no-store", "X-Content-Type-Options":"nosniff" } });
+      return studioPwaResponse(html, { headers: { "Cache-Control": "no-store" } });
     }
     if ((url.pathname.startsWith("/api/") && !url.pathname.startsWith("/api/auth/")) ||
         url.pathname === "/v1/project" || url.pathname === "/v1/usage" || url.pathname === "/v1/ai") {
@@ -1223,13 +1323,7 @@ h1 {
 </body>
 </html>`;
 
-      return new Response(html, {
-        status: 200,
-        headers: {
-          "Content-Type": "text/html;charset=UTF-8",
-          "X-Content-Type-Options": "nosniff"
-        }
-      });
+      return studioPwaResponse(html, { status: 200, headers: { "X-Content-Type-Options": "nosniff" } });
     }
 
     // ==================== AUTHENTIFICATION ====================
