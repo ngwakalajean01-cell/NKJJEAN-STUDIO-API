@@ -1095,7 +1095,7 @@ export default {
       }), {headers:{"Content-Type":"application/manifest+json;charset=UTF-8","Cache-Control":"public, max-age=3600","X-Content-Type-Options":"nosniff"}});
     }
     if (url.pathname === "/nkj-surv-plat/pwa-icon.svg" && request.method === "GET") {
-      const icon = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><rect width="512" height="512" rx="110" fill="#07111f"/><path d="M256 42 438 112v126c0 118-75 193-182 232C149 431 74 356 74 238V112z" fill="#12395b" stroke="#65e0df" stroke-width="18"/><text x="256" y="280" text-anchor="middle" font-family="Arial,sans-serif" font-size="132" font-weight="900" fill="#edf6ff">NKJ</text><path d="M155 330h202" stroke="#65e0df" stroke-width="14" stroke-linecap="round"/></svg>';
+      const icon = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><rect width="512" height="512" rx="110" fill="#f4f8ff"/><path d="M256 42 438 112v126c0 118-75 193-182 232C149 431 74 356 74 238V112z" fill="#1769c2" stroke="#ffffff" stroke-width="18"/><text x="256" y="280" text-anchor="middle" font-family="Arial,sans-serif" font-size="132" font-weight="900" fill="#ffffff">NKJ</text><path d="M155 330h202" stroke="#f4f8ff" stroke-width="14" stroke-linecap="round"/></svg>';
       return new Response(icon,{headers:{"Content-Type":"image/svg+xml;charset=UTF-8","Cache-Control":"public, max-age=604800","X-Content-Type-Options":"nosniff"}});
     }
     if (url.pathname === "/manifest.webmanifest" && request.method === "GET") {
