@@ -1577,10 +1577,11 @@ h1 {
             "SELECT id, email, password_hash, role, status FROM users WHERE email = ? LIMIT 1"
           ).bind(email).first();
 
-          if (!user || user.status !== "active") {
-            return jsonResponse({
-              error: "Identifiants invalides."
-            }, 401);
+          if (!user) {
+            return jsonResponse({error:"Identifiants invalides."},401);
+          }
+          if (user.status !== "active") {
+            return jsonResponse({error:"🛑🛑🛑 👇\nBonne journée monsieur/madame. Ce compte a été mis en suspens (bloqué) ou désactivé/supprimé par le coordonnateur, qui est l'administrateur, pour une raison quelconque.\n\nContactez directement l'administrateur ici :\n\n📡 WhatsApp : 0992049808\n🖥️ Tél. : 0814620569\n👁️ E-mail : ngwakalajean01@gmail.com\n\nPour plus d'informations, n'oubliez pas de le contacter.",code:"ACCOUNT_SUSPENDED"},403);
           }
 
           const isValid = await verifyPassword(
