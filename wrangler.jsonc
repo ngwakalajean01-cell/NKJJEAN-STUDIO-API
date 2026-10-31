@@ -15,5 +15,13 @@
       "binding": "APP_FILES",
       "bucket_name": "nkjjean-studio-private-files"
     }
-  ]
+  ],
+  "previews": {
+    "d1_databases": [
+      {
+        "binding": "DB",
+        "database_id": "16fb3fb6-3d07-40d8-a5cb-05d0c4555b7e"
+      }
+    ]
+  }
 }
