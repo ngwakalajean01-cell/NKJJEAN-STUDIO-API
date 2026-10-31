@@ -1000,7 +1000,7 @@ async function studioHandleApi(request, env, url) {
 // Les pages privées restent réseau uniquement : aucune session/API n'est mise en cache.
 const STUDIO_PWA_ICON_192 = Uint8Array.from(atob("iVBORw0KGgoAAAANSUhEUgAAAMAAAADACAMAAABlApw1AAADAFBMVEUHER9l4N/t9v8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEj4HfAAABW0lEQVR42u3aUW6DMAAE0W7vf+ieoG2wAa/lN/+ezUhRQiBfXwAAAAAAAAAAAAAAAEAZ+Y1y9/8jaVafEZBa86cz6RSfFJBC77WhtGnPC0iVdWQqPdLBrZQ4Dw5Ig3JqLcuNxwdkrfCGvSz0Cbi4mNKALLEJuLyZ4oC87BIwsJrygLxmeiog74gEjA1ni4A8rREwOp1tAvKcRMD4eLYKyBMKATPz2S4g9woEzL2AbBmQu44vC8gtpwVMvITMH14ckMmzAqYDMnO0IiACvIV8CsUXmUuJUwN2v5ze/QeN38Ruq7gzt3PA7jd3PR/wiMlTyp0Ddn/Q7b8SiwNeMz0U8KbqiYCXXQKGNosDltgEDCyWBiz0Cbi8Vxiw3Hh6QINyZq3EeW5Aj3Rsq8o6MNWmPS6g0HtpqFN8UECt+cOZZvURAeVuAACAt/n+AwECBAgQIAAAAAAAAADA/vwAYm0io5xuQMkAAAAASUVORK5CYII="), c => c.charCodeAt(0));
 const STUDIO_PWA_ICON_512 = Uint8Array.from(atob("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"), c => c.charCodeAt(0));
-const STUDIO_PWA_ICON = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#12395b"/><stop offset="1" stop-color="#061321"/></linearGradient></defs><rect width="512" height="512" rx="112" fill="url(#g)"/><path d="M80 350V162h55l85 112V162h57v188h-52l-88-116v116z" fill="#65e0df"/><path d="M300 162h132v48h-75v25h67v45h-67v25h75v45H300z" fill="#edf6ff"/><circle cx="426" cy="91" r="23" fill="#65e0df"/></svg>`;
+const STUDIO_PWA_ICON = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><defs><linearGradient id="studioBg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#174a75"/><stop offset="1" stop-color="#061321"/></linearGradient></defs><rect width="512" height="512" rx="112" fill="url(#studioBg)"/><rect x="38" y="38" width="436" height="436" rx="88" fill="none" stroke="#65e0df" stroke-width="10"/><text x="256" y="278" text-anchor="middle" font-family="Arial,sans-serif" font-size="104" font-weight="900" letter-spacing="-5" fill="#edf6ff">NKJ</text><text x="256" y="365" text-anchor="middle" font-family="Arial,sans-serif" font-size="66" font-weight="900" letter-spacing="3" fill="#65e0df">STU</text></svg>`;
 
 function studioPwaResponse(html, options = {}) {
   const headers = new Headers(options.headers || {});
@@ -1050,8 +1050,11 @@ function studioPwaResponse(html, options = {}) {
   });
 })();
 </script>`;
+  const navigation = `<nav id="nkjGlobalNavigation" aria-label="Navigation des plateformes"><a class="nkjNavBrand" href="/">NKJJEAN-STUDIO</a><a href="/applications">Applications</a><a href="/cours">Cours</a><a href="/publications">Ressources</a><a href="/app">Espace client</a><a class="nkjNavAdmin" href="/nkj-surv-plat">NKJ-SURV-PLAT</a></nav>`;
+  const navigationStyle = `<style id="nkj-global-navigation-style">#nkjGlobalNavigation{position:relative;z-index:9990;display:flex;align-items:center;justify-content:center;gap:9px;flex-wrap:wrap;padding:10px 14px;background:linear-gradient(110deg,#0b1b2c,#102c43);border-bottom:1px solid #34516d;color:#eaf3ff;font:700 12px/1.4 system-ui,sans-serif}#nkjGlobalNavigation a{display:inline-flex;align-items:center;padding:7px 10px;border-radius:8px;color:inherit;text-decoration:none;border:1px solid transparent}#nkjGlobalNavigation a:hover,#nkjGlobalNavigation a:focus-visible{background:#1a3c58;border-color:#65e0df;outline:none}#nkjGlobalNavigation .nkjNavBrand{font-weight:950;letter-spacing:.04em;color:#65e0df}#nkjGlobalNavigation .nkjNavAdmin{border-color:#65e0df;background:#10243a}@media(max-width:560px){#nkjGlobalNavigation{gap:5px;padding:8px 6px}#nkjGlobalNavigation a{padding:7px 8px;font-size:11px}}</style>`;
   let output = String(html);
-  if (output.includes("</head>")) output = output.replace("</head>", head + "</head>");
+  if (output.includes("</head>")) output = output.replace("</head>", navigationStyle + head + "</head>");
+  if (output.includes("<body>")) output = output.replace("<body>", "<body>" + navigation);
   if (output.includes("</body>")) output = output.replace("</body>", script + "</body>");
   return new Response(output, {...options, headers});
 }
@@ -1078,7 +1081,7 @@ export default {
       return new Response(JSON.stringify({
         id: "/nkj-surv-plat",
         name: "NKJ-SURV-PLAT",
-        short_name: "NKJ-SURV",
+        short_name: "NKJ",
         description: "Application privée de surveillance et d'administration NKJJEAN STUDIO",
         lang: "fr",
         start_url: "/nkj-surv-plat",
@@ -1088,18 +1091,18 @@ export default {
         orientation: "any",
         background_color: "#07111f",
         theme_color: "#07111f",
-        icons: [{src:"/nkj-surv-plat/pwa-icon.svg",sizes:"any",type:"image/svg+xml",purpose:"any maskable"},{src:"/pwa-icon-192.png",sizes:"192x192",type:"image/png",purpose:"any"},{src:"/pwa-icon-512.png",sizes:"512x512",type:"image/png",purpose:"any"}]
+        icons: [{src:"/nkj-surv-plat/pwa-icon.svg",sizes:"any",type:"image/svg+xml",purpose:"any maskable"}]
       }), {headers:{"Content-Type":"application/manifest+json;charset=UTF-8","Cache-Control":"public, max-age=3600","X-Content-Type-Options":"nosniff"}});
     }
     if (url.pathname === "/nkj-surv-plat/pwa-icon.svg" && request.method === "GET") {
-      const icon = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><rect width="512" height="512" rx="110" fill="#07111f"/><path d="M256 55 420 118v117c0 108-69 178-164 222C161 413 92 343 92 235V118z" fill="#12395b" stroke="#65e0df" stroke-width="18"/><path d="m174 255 54 54 112-122" fill="none" stroke="#edf6ff" stroke-width="28" stroke-linecap="round" stroke-linejoin="round"/><circle cx="256" cy="165" r="15" fill="#65e0df"/></svg>';
+      const icon = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><rect width="512" height="512" rx="110" fill="#07111f"/><path d="M256 42 438 112v126c0 118-75 193-182 232C149 431 74 356 74 238V112z" fill="#12395b" stroke="#65e0df" stroke-width="18"/><text x="256" y="280" text-anchor="middle" font-family="Arial,sans-serif" font-size="132" font-weight="900" fill="#edf6ff">NKJ</text><path d="M155 330h202" stroke="#65e0df" stroke-width="14" stroke-linecap="round"/></svg>';
       return new Response(icon,{headers:{"Content-Type":"image/svg+xml;charset=UTF-8","Cache-Control":"public, max-age=604800","X-Content-Type-Options":"nosniff"}});
     }
     if (url.pathname === "/manifest.webmanifest" && request.method === "GET") {
       return new Response(JSON.stringify({
         id: "/",
-        name: "NKJJEAN STUDIO",
-        short_name: "NKJJEAN",
+        name: "NKJJEAN-STUDIO",
+        short_name: "NKJ-STU",
         description: "Plateforme numérique NKJJEAN STUDIO",
         lang: "fr",
         start_url: "/",
@@ -1109,7 +1112,7 @@ export default {
         orientation: "any",
         background_color: "#07111f",
         theme_color: "#07111f",
-        icons: [{src:"/pwa-icon-192.png",sizes:"192x192",type:"image/png",purpose:"any"},{src:"/pwa-icon-512.png",sizes:"512x512",type:"image/png",purpose:"any"},{src:"/pwa-icon.svg",sizes:"any",type:"image/svg+xml",purpose:"maskable"}]
+        icons: [{src:"/pwa-icon.svg",sizes:"any",type:"image/svg+xml",purpose:"any maskable"}]
       }), {headers:{"Content-Type":"application/manifest+json;charset=UTF-8","Cache-Control":"public, max-age=3600","X-Content-Type-Options":"nosniff"}});
     }
     if (url.pathname === "/pwa-icon-192.png" && request.method === "GET") {
