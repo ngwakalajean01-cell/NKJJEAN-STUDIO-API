@@ -1006,14 +1006,18 @@ function studioPwaResponse(html, options = {}) {
   const headers = new Headers(options.headers || {});
   headers.set("Content-Type", "text/html;charset=UTF-8");
   headers.set("X-Content-Type-Options", "nosniff");
+  const surveillanceApp = options.appType === "surveillance";
+  const appName = surveillanceApp ? "NKJ-SURV-PLAT" : "NKJJEAN-STUDIO";
+  const manifestPath = surveillanceApp ? "/nkj-surv-plat/manifest.webmanifest" : "/manifest.webmanifest";
+  const iconPath = surveillanceApp ? "/nkj-surv-plat/pwa-icon.svg" : "/pwa-icon.svg";
   const head = `
-<link rel="manifest" href="/manifest.webmanifest">
+<link rel="manifest" href="${manifestPath}">
 <meta name="theme-color" content="#07111f">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="NKJJEAN STUDIO">
-<link rel="icon" href="/pwa-icon.svg" type="image/svg+xml">
+<meta name="apple-mobile-web-app-title" content="${appName}">
+<link rel="icon" href="${iconPath}" type="image/svg+xml">
 <style id="nkj-pwa-install-style">#nkjPwaInstall{position:fixed;left:12px;bottom:12px;z-index:99999;border:1px solid #65e0df;border-radius:999px;padding:10px 15px;background:#10243a;color:#edf6ff;font:700 13px system-ui;box-shadow:0 5px 22px #0008;display:none}#nkjPwaInstall:focus{outline:3px solid #65e0df;outline-offset:3px}</style>`;
   const script = `
 <script id="nkj-pwa-install-script">
@@ -1025,8 +1029,8 @@ function studioPwaResponse(html, options = {}) {
   const button = document.createElement("button");
   button.id = "nkjPwaInstall";
   button.type = "button";
-  button.textContent = "Installer NKJJEAN STUDIO";
-  button.setAttribute("aria-label","Installer NKJJEAN STUDIO sur cet appareil");
+  button.textContent = "Installer ${appName}";
+  button.setAttribute("aria-label","Installer ${appName} sur cet appareil");
   document.body.appendChild(button);
   window.addEventListener("beforeinstallprompt", event => {
     event.preventDefault();
@@ -1070,6 +1074,27 @@ export default {
 
 
     // Ressources publiques PWA. Le service worker ne met en cache ni API, ni espace privé.
+    if (url.pathname === "/nkj-surv-plat/manifest.webmanifest" && request.method === "GET") {
+      return new Response(JSON.stringify({
+        id: "/nkj-surv-plat",
+        name: "NKJ-SURV-PLAT",
+        short_name: "NKJ-SURV",
+        description: "Application privée de surveillance et d'administration NKJJEAN STUDIO",
+        lang: "fr",
+        start_url: "/nkj-surv-plat",
+        scope: "/",
+        display: "standalone",
+        display_override: ["standalone", "minimal-ui"],
+        orientation: "any",
+        background_color: "#07111f",
+        theme_color: "#07111f",
+        icons: [{src:"/nkj-surv-plat/pwa-icon.svg",sizes:"any",type:"image/svg+xml",purpose:"any maskable"},{src:"/pwa-icon-192.png",sizes:"192x192",type:"image/png",purpose:"any"},{src:"/pwa-icon-512.png",sizes:"512x512",type:"image/png",purpose:"any"}]
+      }), {headers:{"Content-Type":"application/manifest+json;charset=UTF-8","Cache-Control":"public, max-age=3600","X-Content-Type-Options":"nosniff"}});
+    }
+    if (url.pathname === "/nkj-surv-plat/pwa-icon.svg" && request.method === "GET") {
+      const icon = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><rect width="512" height="512" rx="110" fill="#07111f"/><path d="M256 55 420 118v117c0 108-69 178-164 222C161 413 92 343 92 235V118z" fill="#12395b" stroke="#65e0df" stroke-width="18"/><path d="m174 255 54 54 112-122" fill="none" stroke="#edf6ff" stroke-width="28" stroke-linecap="round" stroke-linejoin="round"/><circle cx="256" cy="165" r="15" fill="#65e0df"/></svg>';
+      return new Response(icon,{headers:{"Content-Type":"image/svg+xml;charset=UTF-8","Cache-Control":"public, max-age=604800","X-Content-Type-Options":"nosniff"}});
+    }
     if (url.pathname === "/manifest.webmanifest" && request.method === "GET") {
       return new Response(JSON.stringify({
         id: "/",
@@ -1143,7 +1168,7 @@ self.addEventListener("fetch", event => {
       return studioPwaResponse(STUDIO_DOCS_HTML, { headers: { "Cache-Control": "no-store" } });
     }
     if (url.pathname === "/nkj-surv-plat" && request.method === "GET") {
-      return studioPwaResponse(NKJ_SURV_PLAT_HTML, { headers: { "Cache-Control": "no-store", "X-Robots-Tag": "noindex, nofollow" } });
+      return studioPwaResponse(NKJ_SURV_PLAT_HTML, { appType: "surveillance", headers: { "Cache-Control": "no-store", "X-Robots-Tag": "noindex, nofollow" } });
     }
     if (url.pathname === "/admin" && request.method === "GET") {
       return studioPwaResponse(STUDIO_ADMIN_HTML, { headers: { "Cache-Control": "no-store" } });
