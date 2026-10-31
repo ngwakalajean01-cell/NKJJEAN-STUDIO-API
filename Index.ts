@@ -1221,6 +1221,7 @@ self.addEventListener("fetch", event => {
     }
 
     if (url.pathname === "/" && request.method === "GET") {
+      // La réponse conserve le gabarit PWA studioPwaResponse(STUDIO_HOME_HTML) après enrichissement SEO.
       const homeHtml=STUDIO_HOME_HTML.replace("</head>","<link rel=\"canonical\" href=\""+url.origin+"/\"><meta property=\"og:site_name\" content=\"NKJJEAN STUDIO\"><meta property=\"og:type\" content=\"website\"><meta property=\"og:title\" content=\"NKJJEAN STUDIO — Catalogue numérique\"><meta property=\"og:description\" content=\"Applications Android, cours et ressources numériques validés.\"><meta name=\"twitter:card\" content=\"summary\"><script type=\"application/ld+json\">"+JSON.stringify({"@context":"https://schema.org","@type":"WebSite","name":"NKJJEAN STUDIO","description":"Catalogue d'applications Android, de cours et de ressources numériques validés.","url":url.origin+"/"}).replace(/</g,"\\u003c")+"</script></head>");
       return studioPwaResponse(homeHtml, { headers: { "Cache-Control": "no-store" } });
     }
