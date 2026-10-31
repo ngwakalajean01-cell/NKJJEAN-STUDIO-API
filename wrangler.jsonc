@@ -10,12 +10,9 @@
     }
   ],
   "keep_vars": true,
-  "r2_buckets": [
-    {
-      "binding": "APP_FILES",
-      "bucket_name": "nkjjean-studio-private-files"
-    }
-  ],
+  "vars": {
+    "SUPABASE_URL": "https://piuqudrpitjmvhtlymns.supabase.co"
+  },
   "previews": {
     "d1_databases": [
       {
