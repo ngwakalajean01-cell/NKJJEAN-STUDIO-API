@@ -32,6 +32,34 @@ jobs:
         run: |
           node --input-type=module --check < Index.ts
 
+      - name: Vérifier l'installation PWA Chrome et la confidentialité hors ligne
+        run: |
+          node <<'NODE'
+          const fs = require("node:fs");
+          const assert = require("node:assert/strict");
+          const source = fs.readFileSync("Index.ts", "utf8");
+          for (const value of [
+            '"/manifest.webmanifest"',
+            '"/service-worker.js"',
+            '"/pwa-icon-192.png"',
+            '"/pwa-icon-512.png"',
+            '"/offline.html"',
+            'display: "standalone"',
+            'start_url: "/"',
+            'studioPwaResponse(STUDIO_HOME_HTML',
+            'studioPwaResponse(STUDIO_APP_HTML',
+            'studioPwaResponse(STUDIO_ADMIN_HTML',
+            'studioPwaResponse(NKJ_SURV_PLAT_HTML'
+          ]) assert.ok(source.includes(value), 'Élément PWA absent : ' + value);
+          assert.match(source, /sizes:"192x192",type:"image\/png"/);
+          assert.match(source, /sizes:"512x512",type:"image\/png"/);
+          assert.match(source, /request\.mode !== "navigate"\) return/);
+          assert.match(source, /fetch\(request\)\.catch\(async \(\) => \(await caches\.match\(OFFLINE_PAGE\)\)/);
+          assert.ok(!/caches\.open\([^)]*\)[\s\S]{0,300}\/api\//.test(source),
+            "Les API ne doivent jamais être mises en cache.");
+          console.log("PWA : manifeste, icônes Chrome, bouton d'installation et mode hors connexion vérifiés.");
+          NODE
+
       - name: Tester le hachage des mots de passe et les anciens comptes
         run: node tests/auth-password.test.cjs
 
