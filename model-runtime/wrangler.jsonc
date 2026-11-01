@@ -1,0 +1,8 @@
+{
+  "name": "nkjjean-model-runtime",
+  "main": "Index.ts",
+  "compatibility_date": "2026-10-31",
+  "vars": {
+    "INFERENCE_MODEL": "nkjjean"
+  }
+}
