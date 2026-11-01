@@ -10,5 +10,6 @@
   ],
   "vars": {
     "NKJ_MODEL_NAME": "nkjjean-model"
-  }
+  },
+  "workers_dev": false
 }
