@@ -689,6 +689,29 @@ async function studioHandleApi(request, env, url) {
       ]);
       return jsonResponse({success:true,message:"Message envoyé dans la boîte NKJJEAN-STUDIO. Il restera disponible pendant un an."},201);
     }
+    if (path==="/api/surveillance/quota-requests" && request.method==="POST") {
+      const body=await studioReadBody(request);
+      const targetId=studioText(body.user_id,80);
+      const amount=Number(body.amount);
+      const currency=body.currency==="CDF"?"CDF":body.currency==="USD"?"USD":null;
+      const quotaLabel=studioText(body.quota_label,160);
+      const note=studioText(body.note,700);
+      if(!targetId)return jsonResponse({error:"Sélectionnez un compte client."},400);
+      if(!Number.isFinite(amount)||amount<=0||amount>100000000)return jsonResponse({error:"Montant invalide."},400);
+      if(!currency)return jsonResponse({error:"Devise non autorisée."},400);
+      if(quotaLabel.length<3)return jsonResponse({error:"Précisez le quota ou le service concerné."},400);
+      const target=await env.DB.prepare("SELECT id,email,role,status FROM users WHERE id=? LIMIT 1").bind(targetId).first();
+      if(!target||target.role==="admin")return jsonResponse({error:"Compte client introuvable ou non éligible."},404);
+      const amountText=new Intl.NumberFormat("fr-FR",{minimumFractionDigits:2,maximumFractionDigits:2}).format(amount);
+      const message="DEMANDE DE QUOTA MANUEL — NKJJEAN AI\n\nBonjour, une demande de recharge de quota vous est adressée.\nService : "+quotaLabel+"\nMontant à verser : "+amountText+" "+currency+"\n\nAprès le paiement, veuillez transmettre la preuve ou contacter l’administration pour vérification. Le quota ne sera activé qu’après validation manuelle du paiement par l’administration.\n"+(note?"\nPrécision : "+note:"")+"\n\nAdministration NKJJEAN";
+      const now=new Date().toISOString(),expiryDate=new Date();
+      expiryDate.setFullYear(expiryDate.getFullYear()+1);
+      await env.DB.batch([
+        env.DB.prepare("INSERT INTO platform_messages (id,sender_user_id,recipient_user_id,message,created_at,expires_at) VALUES (?,?,?,?,?,?)").bind(randomHex(16),user.id,target.id,message,now,expiryDate.toISOString()),
+        env.DB.prepare("INSERT INTO surveillance_audit_log (id,admin_user_id,target_user_id,action,details_json) VALUES (?,?,?,?,?)").bind(randomHex(16),user.id,target.id,"ai_quota_request",JSON.stringify({amount,currency,quota_label:quotaLabel}))
+      ]);
+      return jsonResponse({success:true,message:"Demande de quota envoyée à "+target.email+". Le client la recevra dans sa boîte de messages."},201);
+    }
     if (parts.length===4 && parts[2]==="projects" && parts[3] && request.method==="PATCH") {
       const projectId=parts[3],body=await studioReadBody(request);
       const project=await env.DB.prepare("SELECT id,user_id FROM projects WHERE id=? LIMIT 1").bind(projectId).first();
