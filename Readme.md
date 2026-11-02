@@ -143,3 +143,8 @@ Ne publiez jamais `SESSION_SECRET`, les mots de passe, les jetons de session ni 
 - Le service worker ne met pas en cache les routes API ni les pages privées.
 
 La vérification continue aussi de contrôler que le bouton d'installation PWA est présent sur chaque interface.
+
+
+## Déploiement Cloudflare Workers Builds
+
+Le dépôt est relié au Worker `nkjjean-studio-api` sur la branche `main`. Ce projet utilise directement `wrangler.jsonc` et ne nécessite pas de commande de compilation préalable. La commande de déploiement attendue dans Workers Builds est `npx wrangler deploy`. Chaque nouveau commit sur `main` doit déclencher un build puis, si celui-ci réussit, publier une nouvelle version du Worker.
