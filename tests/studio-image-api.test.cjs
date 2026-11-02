@@ -44,4 +44,13 @@ const scriptStart = workspaceMatch[1].indexOf("<script>") + "<script>".length;
 const scriptEnd = workspaceMatch[1].indexOf("</script>", scriptStart);
 assert.ok(scriptStart >= "<script>".length && scriptEnd > scriptStart, "Le script du Studio est absent.");
 new vm.Script(workspaceMatch[1].slice(scriptStart, scriptEnd), { filename: "STUDIO_WORKSPACE_HTML.js" });
+const appStart = worker.indexOf("const STUDIO_APP_HTML = `");
+const appEnd = worker.indexOf("`;", appStart);
+assert.ok(appStart >= 0 && appEnd > appStart, "La page du tableau de bord est absente.");
+const appHtml = worker.slice(appStart, appEnd);
+const appScriptStart = appHtml.indexOf("<script>") + "<script>".length;
+const appScriptEnd = appHtml.indexOf("</script>", appScriptStart);
+assert.ok(appScriptStart >= "<script>".length && appScriptEnd > appScriptStart, "Le script du tableau de bord est absent.");
+new vm.Script(appHtml.slice(appScriptStart, appScriptEnd), { filename: "STUDIO_APP_HTML.js" });
+
 console.log("Tests statiques NKJJEAN AI Images réussis : routes, quotas, limites, runtime privé et absence de fournisseur externe.");
