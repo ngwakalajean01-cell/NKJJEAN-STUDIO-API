@@ -1393,13 +1393,14 @@ function studioPwaResponse(html, options = {}) {
 <div id="nkjSubnav" class="nkj-subnav" aria-live="polite"></div></div></div>`;
   const navigationStyle = authGate ? `
 <style id="nkj-auth-layout-style">
-html,body{margin:0!important;padding:0!important;min-height:100vh;background:#1769d2!important}
-body{border:0!important;color:#fff!important}
-body::before{content:"";position:fixed;z-index:99999;top:0;left:0;right:0;height:10px;background:#f2cf00;pointer-events:none}
-body::after{content:"";position:fixed;z-index:99999;bottom:0;left:0;right:0;height:10px;background:#080808;pointer-events:none}
-.shell{min-height:calc(100vh - 20px)!important;background:#1769d2!important}
-.intro,.main{background:#1769d2!important;color:#fff!important}
-.intro p{color:#eaf2ff!important}
+html,body{margin:0!important;padding:0!important;min-height:100vh;background:#fff!important;color:#1f2328!important}
+body{border:0!important}
+body::before{content:"";position:fixed;z-index:99999;top:0;left:0;right:0;height:5px;background:#f2cf00;pointer-events:none}
+body::after{content:"";position:fixed;z-index:99999;bottom:0;left:0;right:0;height:5px;background:#080808;pointer-events:none}
+.shell{min-height:calc(100vh - 10px)!important;background:#fff!important}
+.intro{background:#fff!important;color:#1f2328!important}
+.intro p{color:#57606a!important}
+.main{background:#1f232899!important;color:#1f2328!important}
 .card{background:#fff!important;color:#1f2328!important}
 </style>` : `
 <style id="nkj-unified-layout-style">
