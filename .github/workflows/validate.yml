@@ -59,7 +59,7 @@ jobs:
           }
           assert.ok(runtime.includes('"/v1/infer"') &&
             runtime.includes('"/v1/chat/completions"') &&
-            runtime.includes('Authorization: "Bearer " + token'),
+            runtime.includes('"Authorization": "Bearer " + token'),
             "Le relais privé doit utiliser le contrat HTTPS authentifié.");
           assert.ok(runtime.includes("PRIVATE_INFERENCE_NOT_CONFIGURED"),
             "L'absence du serveur privé doit rester explicitement signalée.");
