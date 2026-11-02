@@ -1390,7 +1390,17 @@ function studioPwaResponse(html, options = {}) {
   <nav class="nkjNavLinks"><a href="https://wa.me/243992049808" target="_blank" rel="noopener">WhatsApp</a><a href="mailto:ngwakalajean01@gmail.com">Gmail</a><a href="tel:+243814620569">Appeler</a></nav>
   <div class="nkjNavBottom"><span>Plateforme numérique</span><a class="nkjNavAdmin" href="/nkj-surv-plat">Accès administrateur</a></div>
 </aside>`;
-  const navigationStyle = `
+  const navigationStyle = authGate ? `
+<style id="nkj-auth-layout-style">
+html,body{margin:0!important;padding:0!important;min-height:100vh;background:#1769d2!important}
+body{border:0!important;color:#fff!important}
+body::before{content:"";position:fixed;z-index:99999;top:0;left:0;right:0;height:10px;background:#f2cf00;pointer-events:none}
+body::after{content:"";position:fixed;z-index:99999;bottom:0;left:0;right:0;height:10px;background:#080808;pointer-events:none}
+.shell{min-height:calc(100vh - 20px)!important;background:#1769d2!important}
+.intro,.main{background:#1769d2!important;color:#fff!important}
+.intro p{color:#eaf2ff!important}
+.card{background:#fff!important;color:#1f2328!important}
+</style>` : `
 <style id="nkj-unified-layout-style">
 :root{color-scheme:light!important;--bg:#f6f8fa;--line:#d0d7de;--muted:#59636e;--blue:#0969da;--cyan:#0969da}
 *{box-sizing:border-box}html{background:#f6f8fa}
@@ -1399,27 +1409,27 @@ body::before{content:"";position:fixed;z-index:99999;top:0;left:0;right:0;height
 body::after{content:"";position:fixed;z-index:99999;bottom:0;left:0;right:0;height:7px;background:#080808;pointer-events:none}
 a{color:#0969da}header.top{border-bottom:1px solid #d0d7de!important}header.top nav{display:none!important}
 .brand span{color:#0969da!important}
-#nkjGlobalNavigation{position:fixed;z-index:99990;left:0;top:7px;bottom:7px;width:238px;display:flex;flex-direction:column;padding:20px 14px;background:#fff;border-right:1px solid #d0d7de;color:#1f2328;font:14px/1.45 system-ui,sans-serif}
+#nkjGlobalNavigation{position:fixed;z-index:99990;left:0;top:10px;bottom:10px;width:248px;display:flex;flex-direction:column;padding:20px 14px;background:#1769d2;border-right:1px solid #0f4fa8;color:#fff;font:14px/1.45 system-ui,sans-serif}
 #nkjGlobalNavigation a{text-decoration:none}
-#nkjGlobalNavigation .nkjNavBrand{display:flex;flex-direction:column;align-items:flex-start;gap:3px;padding:8px 10px 22px;border-bottom:1px solid #d8dee4;color:#1f2328}
-#nkjGlobalNavigation .nkjNavMonogram{font-size:25px;font-weight:950;letter-spacing:-.06em;color:#0969da}
-#nkjGlobalNavigation .nkjNavCaption{font-size:11px;font-weight:800;letter-spacing:.13em;color:#59636e}
-#nkjGlobalNavigation .nkjNavSection{margin:22px 10px 8px;color:#656d76;font-size:10px;font-weight:900;letter-spacing:.12em}
+#nkjGlobalNavigation .nkjNavBrand{display:flex;flex-direction:column;align-items:flex-start;gap:3px;padding:8px 10px 22px;border-bottom:1px solid #ffffff55;color:#fff}
+#nkjGlobalNavigation .nkjNavMonogram{font-size:25px;font-weight:950;letter-spacing:-.06em;color:#f2cf00}
+#nkjGlobalNavigation .nkjNavCaption{font-size:11px;font-weight:800;letter-spacing:.13em;color:#eaf2ff}
+#nkjGlobalNavigation .nkjNavSection{margin:22px 10px 8px;color:#dbeafe;font-size:10px;font-weight:900;letter-spacing:.12em}
 #nkjGlobalNavigation .nkjNavLinks{display:grid;gap:4px}
-#nkjGlobalNavigation .nkjNavLinks a,#nkjGlobalNavigation .nkjNavLinks button{display:flex;width:100%;padding:10px 11px;border:0;border-radius:7px;background:transparent;color:#24292f;font:650 13px system-ui,sans-serif;text-align:left;text-decoration:none;cursor:pointer}
-#nkjGlobalNavigation .nkjNavLinks a:hover,#nkjGlobalNavigation .nkjNavLinks a:focus-visible,#nkjGlobalNavigation .nkjNavLinks button:hover,#nkjGlobalNavigation .nkjNavLinks button:focus-visible{background:#f3f4f6;color:#0969da;outline:none}
+#nkjGlobalNavigation .nkjNavLinks a,#nkjGlobalNavigation .nkjNavLinks button{display:flex;width:100%;padding:10px 11px;border:0;border-radius:7px;background:transparent;color:#fff;font:650 13px system-ui,sans-serif;text-align:left;text-decoration:none;cursor:pointer}
+#nkjGlobalNavigation .nkjNavLinks a:hover,#nkjGlobalNavigation .nkjNavLinks a:focus-visible,#nkjGlobalNavigation .nkjNavLinks button:hover,#nkjGlobalNavigation .nkjNavLinks button:focus-visible{background:#0f4fa8;color:#f2cf00;outline:none}
 #nkjGlobalNavigation .nkjNavTree{display:grid;gap:6px}
 #nkjGlobalNavigation .nkjNavTree details{border-radius:7px}
-#nkjGlobalNavigation .nkjNavTree summary{padding:9px 11px;color:#24292f;font-weight:750;font-size:13px;cursor:pointer;list-style:none}
+#nkjGlobalNavigation .nkjNavTree summary{padding:9px 11px;color:#fff;font-weight:750;font-size:13px;cursor:pointer;list-style:none}
 #nkjGlobalNavigation .nkjNavTree summary::-webkit-details-marker{display:none}
-#nkjGlobalNavigation .nkjNavTree summary:before{content:"›";display:inline-block;width:18px;color:#656d76}
+#nkjGlobalNavigation .nkjNavTree summary:before{content:"›";display:inline-block;width:18px;color:#f2cf00}
 #nkjGlobalNavigation .nkjNavTree details[open] summary:before{content:"⌄"}
 #nkjGlobalNavigation .nkjNavTree details a{margin-left:18px;padding:8px 10px;font-size:12px}
-#nkjGlobalNavigation .nkjSurvNav button.active{background:#0969da;color:#fff}
+#nkjGlobalNavigation .nkjSurvNav button.active{background:#f2cf00;color:#14233b}
 body:has(#nkjGlobalNavigation[aria-label="Navigation NKJ-SURV-PLAT"]) .surv-sidebar{display:none!important}
 body:has(#nkjGlobalNavigation[aria-label="Navigation NKJ-SURV-PLAT"]) .surv-layout{grid-template-columns:minmax(0,1fr)!important}
-#nkjGlobalNavigation .nkjNavBottom{margin-top:auto;padding:15px 10px 7px;border-top:1px solid #d8dee4;color:#656d76;font-size:11px}
-#nkjGlobalNavigation .nkjNavBottom strong{display:block;margin-top:3px;color:#24292f;font-size:12px}
+#nkjGlobalNavigation .nkjNavBottom{margin-top:auto;padding:15px 10px 7px;border-top:1px solid #ffffff55;color:#eaf2ff;font-size:11px}
+#nkjGlobalNavigation .nkjNavBottom strong{display:block;margin-top:3px;color:#fff;font-size:12px}
 .wrap{max-width:1320px!important}
 .panel,.project,.stat,.card,.detail,.file,.sidebar,.conversation,.notice,.item{background:#fff!important;color:#1f2328!important;border-color:#d0d7de!important;box-shadow:0 1px 2px #1f23280a}
 .muted,.card p,.project p{color:#59636e!important}
