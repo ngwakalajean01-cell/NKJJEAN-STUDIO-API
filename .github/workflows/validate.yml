@@ -7,6 +7,7 @@ on:
       - codex/nkjjean-studio-platform
       - preparation/nkjjean-ai-rtx3090
       - feature/nkj-surv-plat
+      - feature/nkjjean-ai-image-api
   pull_request:
     branches:
       - main
@@ -111,6 +112,9 @@ jobs:
 
       - name: Vérifier la passerelle IA propriétaire et les routes clientes
         run: node tests/studio-ai.test.cjs
+
+      - name: Tester les routes privées de génération et modification d’images
+        run: node tests/studio-image-api.test.cjs
 
       - name: Vérifier la syntaxe des Workers IA privés
         run: |

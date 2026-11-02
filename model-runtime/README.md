@@ -25,3 +25,13 @@ Puis déployer `ai-engine`, et enfin déclarer les Service Bindings dans les Wor
 ## Important
 
 Ce Worker n'est pas le modèle et ne crée pas d'intelligence artificielle à lui seul. Le serveur privé GPU/CPU et le modèle open-weight doivent être choisis, installés, configurés et testés. Aucun fournisseur d'IA tiers n'est appelé par ce code ; seule l'URL privée configurée par l'administrateur est utilisée.
+
+## Génération d'images
+
+Pour les tâches `image_generation` et `image_edit`, l'adaptateur appelle exclusivement le serveur privé configuré par `INFERENCE_ORIGIN` sur :
+
+`POST /v1/nkjjean/images/generations`
+
+Le serveur reçoit `model`, `task`, `prompt`, `images` (photos base64), `size`, `style` et `request_id`. Il doit répondre avec `images: [{ mime_type: "image/png", b64_json: "..." }]`.
+
+Ce contrat est volontairement propre à NKJJEAN. Il ne redirige pas les images vers une API publique tierce. Si le serveur privé n'expose pas cette route, la passerelle renvoie une erreur et n'annonce aucune génération réussie.
