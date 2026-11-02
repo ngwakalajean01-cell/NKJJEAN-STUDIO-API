@@ -1287,6 +1287,7 @@ function studioPwaResponse(html, options = {}) {
 #nkjPwaInstall:focus{outline:3px solid #1769c2;outline-offset:3px}
 @media(max-width:600px){#nkjPwaInstall{right:12px;bottom:12px;padding:11px 14px}}
 </style>`;
+  // Bouton d’installation injecté : id="nkjPwaInstall".
   const script = `
 <script id="nkj-pwa-install-script">
 (()=> {
