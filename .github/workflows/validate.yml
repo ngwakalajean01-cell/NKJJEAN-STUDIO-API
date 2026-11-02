@@ -129,12 +129,14 @@ jobs:
           db.executescript(sql)
           sql = Path("migrations/0004_nkj_surv_plat.sql").read_text(encoding="utf-8")
           db.executescript(sql)
+          sql = Path("migrations/0005_platform_messages.sql").read_text(encoding="utf-8")
+          db.executescript(sql)
           tables = {
               row[0] for row in db.execute(
                   "SELECT name FROM sqlite_master WHERE type='table'"
               )
           }
-          required = {"project_conversations", "project_messages", "published_resources", "resource_files", "app_release_files", "resource_reviews", "surveillance_events", "admin_user_messages", "surveillance_audit_log"}
+          required = {"project_conversations", "project_messages", "published_resources", "resource_files", "app_release_files", "resource_reviews", "surveillance_events", "admin_user_messages", "surveillance_audit_log", "platform_messages"}
           assert required.issubset(tables), f"Tables manquantes : {required - tables}"
           user_columns = {row[1] for row in db.execute("PRAGMA table_info(users)")}
           assert "deleted_at" in user_columns, "Colonne users.deleted_at manquante"
@@ -153,5 +155,9 @@ jobs:
           created, expires = db.execute("SELECT created_at, expires_at FROM admin_user_messages WHERE id='msg-test'").fetchone()
           hours = db.execute("SELECT (julianday(?) - julianday(?)) * 24", (expires, created)).fetchone()[0]
           assert 23.99 <= hours <= 24.01, f"Expiration attendue sous 24h, obtenu : {hours}"
-          print("Migrations SQL valides : surveillance, desactivation reversible et expiration des messages sous 24h.")
+          db.execute("INSERT INTO platform_messages (id, sender_user_id, recipient_user_id, message) VALUES ('platform-msg-test', 'admin-test', 'client-test', 'Test de messagerie')")
+          created, expires = db.execute("SELECT created_at, expires_at FROM platform_messages WHERE id='platform-msg-test'").fetchone()
+          days = db.execute("SELECT julianday(?) - julianday(?)", (expires, created)).fetchone()[0]
+          assert 364 <= days <= 367, f"Expiration attendue sous un an, obtenue : {days} jours"
+          print("Migrations SQL valides : surveillance, désactivation réversible et messagerie interplateforme testées.")
           PY
