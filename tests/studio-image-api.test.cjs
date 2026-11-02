@@ -1,4 +1,5 @@
 const assert = require("node:assert/strict");
+const vm = require("node:vm");
 const fs = require("node:fs");
 
 const worker = fs.readFileSync("Index.ts", "utf8");
@@ -37,4 +38,9 @@ assert.ok(worker.includes('id="generatedImageArea"'), "La zone de résultat des 
 assert.ok(!worker.includes("api.openai.com"), "Aucun appel direct à OpenAI ne doit être présent.");
 assert.ok(!worker.includes("generativelanguage.googleapis.com"), "Aucun appel direct à Gemini ne doit être présent.");
 
+const workspaceMatch = worker.match(/const STUDIO_WORKSPACE_HTML = `([\s\S]*?)`;/);
+assert.ok(workspaceMatch, "La page Studio du projet est absente.");
+const workspaceScript = workspaceMatch[1].match(/<script>([\s\S]*?)<\\/script>/);
+assert.ok(workspaceScript, "Le script du Studio est absent.");
+new vm.Script(workspaceScript[1], { filename: "STUDIO_WORKSPACE_HTML.js" });
 console.log("Tests statiques NKJJEAN AI Images réussis : routes, quotas, limites, runtime privé et absence de fournisseur externe.");
