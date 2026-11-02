@@ -53,6 +53,60 @@ async function handle(request: Request, env: Env) {
   const prompt = clean(body.prompt, 20_000);
   if (!prompt) return json({ error: "Prompt vide." }, 400);
 
+  if (body.task === "image_generation" || body.task === "image_edit") {
+    const images = Array.isArray(body.images) ? body.images.slice(0, 6) : [];
+    if (images.some((item) => !item || typeof item.data !== "string" || !/^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/=]+$/i.test(item.data))) {
+      return json({ code: "INVALID_REFERENCE_IMAGES", error: "Photos de référence invalides." }, 400);
+    }
+    if (body.task === "image_edit" && images.length === 0) {
+      return json({ code: "REFERENCE_IMAGE_REQUIRED", error: "Une photo est nécessaire pour la modification." }, 400);
+    }
+    let imageResponse: Response;
+    try {
+      imageResponse = await fetch(origin + "/v1/nkjjean/images/generations", {
+        method: "POST",
+        headers: {
+          "Authorization": "Bearer " + token,
+          "Content-Type": "application/json",
+          "Accept": "application/json",
+          "X-NKJJEAN-REQUEST-ID": requestId
+        },
+        body: JSON.stringify({
+          model: clean(env.INFERENCE_MODEL, 120) || "nkjjean-image",
+          task: body.task,
+          prompt,
+          images,
+          size: clean(body.size, 20) || "1024x1024",
+          style: clean(body.style, 80) || "professional",
+          request_id: requestId
+        }),
+        signal: AbortSignal.timeout(240_000)
+      });
+    } catch {
+      return json({ code: "PRIVATE_IMAGE_INFERENCE_UNREACHABLE", error: "Le serveur privé de génération d'images est injoignable." }, 502);
+    }
+    if (!imageResponse.ok) {
+      return json({ code: imageResponse.status === 503 ? "PRIVATE_IMAGE_MODEL_NOT_READY" : "PRIVATE_IMAGE_INFERENCE_ERROR", error: "Le moteur privé d'images n'a pas pu traiter la demande." }, imageResponse.status === 503 ? 503 : 502);
+    }
+    let imageResult: Record<string, unknown>;
+    try {
+      const parsed = await imageResponse.json();
+      if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) throw new Error();
+      imageResult = parsed as Record<string, unknown>;
+    } catch {
+      return json({ code: "PRIVATE_IMAGE_INVALID_RESPONSE", error: "Réponse invalide du moteur privé d'images." }, 502);
+    }
+    const rows = Array.isArray(imageResult.images) ? imageResult.images : (Array.isArray(imageResult.data) ? imageResult.data : []);
+    const output = rows.map((item) => {
+      const row = item && typeof item === "object" ? item as Record<string, unknown> : {};
+      const b64 = clean(row.b64_json ?? row.image_base64, 20_000_000);
+      const mime = clean(row.mime_type, 40) || "image/png";
+      return b64 && /^image\/(png|jpeg|webp)$/i.test(mime) ? { b64_json: b64, mime_type: mime } : null;
+    }).filter(Boolean).slice(0, 1);
+    if (!output.length) return json({ code: "PRIVATE_IMAGE_EMPTY", error: "Le moteur privé n'a renvoyé aucune image." }, 502);
+    return json({ success: true, images: output, model: clean(imageResult.model, 120) || clean(env.INFERENCE_MODEL, 120) || "nkjjean-image", request_id: requestId });
+  }
+
   const history = Array.isArray(body.history) ? body.history.slice(-20).map((item) => {
     const row = item && typeof item === "object" ? item as Record<string, unknown> : {};
     const role = row.role === "assistant" ? "assistant" : "user";
