@@ -102,3 +102,5 @@ Elles appliquent les mêmes limites, quotas et validations que les routes publiq
 Dans « Mes projets », le bouton « Créer mon projet NKJJEAN AI » crée un projet préconfiguré nommé « NKJJEAN AI — Génération d'affiches » et ouvre son Studio. Les clés API peuvent ensuite être créées depuis le Studio, onglet « API et activité ».
 
 Ces fonctionnalités créent l'espace de projet et l'interface de génération. Elles ne déploient pas le modèle d'image : tant que le runtime privé n'est pas raccordé à un vrai modèle, une demande de génération retourne explicitement une indisponibilité.
+
+Depuis le Studio, le propriétaire peut créer une clé API dans l'onglet « API et activité ». La clé complète est affichée une seule fois avec une action de copie ; seule son empreinte et son préfixe sont conservés pour la gestion ultérieure. En cas de perte, il faut révoquer la clé et en créer une nouvelle.
