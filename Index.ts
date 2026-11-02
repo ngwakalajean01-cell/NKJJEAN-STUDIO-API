@@ -666,7 +666,7 @@ async function studioHandleApi(request, env, url) {
     const key=await studioApiKey(request,env);
     if(!key)return jsonResponse({error:"Clé API invalide, révoquée ou projet indisponible."},401);
     const size=Number(request.headers.get("Content-Length")||"0");
-    if(size>25*1024*1024)return jsonResponse({success:false,error:"La requête dépasse 25 Mio.",code:"IMAGE_PAYLOAD_TOO_LARGE"},413);
+    if(size>28*1024*1024)return jsonResponse({success:false,error:"La requête dépasse 25 Mio.",code:"IMAGE_PAYLOAD_TOO_LARGE"},413);
     let body;
     try{body=await request.json();if(!body||typeof body!=="object"||Array.isArray(body))throw new Error();}
     catch(error){return jsonResponse({success:false,error:"Corps JSON invalide.",code:"INVALID_JSON"},400);}
