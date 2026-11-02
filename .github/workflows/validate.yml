@@ -82,8 +82,11 @@ jobs:
             '"/nkj-surv-plat/pwa-icon.svg"',
             '"/offline.html"',
             'id="nkjGlobalNavigation"',
-            'NKJJEAN-STUDIO</a>',
-            'NKJ-SURV-PLAT</a>',
+            'class="nkjNavMonogram">NKJ-STU</span>',
+            'class="nkjNavCaption">I.T-NKJJEAN</span>',
+            'id="nkjPwaInstall"',
+            'window.alert(instructions)',
+            'PLAT.I.T.NKJ',
             'display: "standalone"',
             'start_url: "/"',
             'studioPwaResponse(STUDIO_HOME_HTML',
@@ -95,8 +98,8 @@ jobs:
           assert.match(source, /short_name: "NKJ-STU"/);
           assert.match(source, /name: "NKJ-SURV-PLAT"/);
           assert.match(source, /short_name: "NKJ"/);
-          assert.match(source, /fill="#edf6ff">NKJ<\/text>/);
-          assert.match(source, /fill="#65e0df">STU<\/text>/);
+          assert.match(source, /fill="#ffffff">NKJ<\/text>/);
+          assert.match(source, /fill="#0969da">STU<\/text>/);
           assert.match(source, /start_url: "\/nkj-surv-plat"/);
           assert.match(source, /studioPwaResponse\(NKJ_SURV_PLAT_HTML, \{ appType: "surveillance"/);
           assert.match(source, /studioPwaResponse\(NKJ_SURV_PLAT_HTML, \{ appType: "surveillance"/);
