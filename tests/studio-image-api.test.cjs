@@ -34,6 +34,7 @@ assert.ok(worker.includes('NKJJEAN AI — Génération d’affiches'), "Le modè
 assert.ok(worker.includes('id="imageForm"') && worker.includes('id="imageFiles"'), "Le formulaire de génération d'affiches dans le Studio est absent.");
 assert.ok(worker.includes('readImageFile(file)'), "Le Studio ne prépare pas les photos de référence.");
 assert.ok(worker.includes('id="generatedImageArea"'), "La zone de résultat des affiches est absente.");
+assert.ok(worker.includes('id="createProjectApiKey"') && worker.includes('id="projectApiKeyNotice"'), "La création et l’affichage ponctuel de la clé API dans le Studio sont absents.");
 
 assert.ok(!worker.includes("api.openai.com"), "Aucun appel direct à OpenAI ne doit être présent.");
 assert.ok(!worker.includes("generativelanguage.googleapis.com"), "Aucun appel direct à Gemini ne doit être présent.");
