@@ -40,7 +40,8 @@ assert.ok(!worker.includes("generativelanguage.googleapis.com"), "Aucun appel di
 
 const workspaceMatch = worker.match(/const STUDIO_WORKSPACE_HTML = `([\s\S]*?)`;/);
 assert.ok(workspaceMatch, "La page Studio du projet est absente.");
-const workspaceScript = workspaceMatch[1].match(/<script>([\s\S]*?)<\\/script>/);
-assert.ok(workspaceScript, "Le script du Studio est absent.");
-new vm.Script(workspaceScript[1], { filename: "STUDIO_WORKSPACE_HTML.js" });
+const scriptStart = workspaceMatch[1].indexOf("<script>") + "<script>".length;
+const scriptEnd = workspaceMatch[1].indexOf("</script>", scriptStart);
+assert.ok(scriptStart >= "<script>".length && scriptEnd > scriptStart, "Le script du Studio est absent.");
+new vm.Script(workspaceMatch[1].slice(scriptStart, scriptEnd), { filename: "STUDIO_WORKSPACE_HTML.js" });
 console.log("Tests statiques NKJJEAN AI Images réussis : routes, quotas, limites, runtime privé et absence de fournisseur externe.");
