@@ -5,9 +5,17 @@ on:
     branches:
       - main
       - codex/nkjjean-studio-platform
+      - preparation/nkjjean-ai-rtx3090
+      - feature/nkj-surv-plat
+      - feature/nkjjean-ai-image-api
   pull_request:
     branches:
       - main
+      - preparation/nkjjean-ai-rtx3090
+
+concurrency:
+  group: validation-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   verification:
@@ -23,14 +31,96 @@ jobs:
 
       - name: Vérifier la syntaxe du Worker
         run: |
-          cp Index.ts /tmp/nkjjean-worker.js
-          node --check /tmp/nkjjean-worker.js
+          node --input-type=module --check < Index.ts
+
+      - name: Vérifier les contrats du moteur IA auto-hébergé
+        run: |
+          node <<'NODE'
+          const fs = require("node:fs");
+          const assert = require("node:assert/strict");
+          const mainConfig = JSON.parse(fs.readFileSync("wrangler.jsonc", "utf8"));
+          const engineConfig = JSON.parse(fs.readFileSync("ai-engine/wrangler.jsonc", "utf8"));
+          const runtimeConfig = JSON.parse(fs.readFileSync("model-runtime/wrangler.jsonc", "utf8"));
+          const engine = fs.readFileSync("ai-engine/Index.ts", "utf8");
+          const runtime = fs.readFileSync("model-runtime/Index.ts", "utf8");
+
+          assert.ok(mainConfig.services?.some((item) =>
+            item.binding === "NKJ_AI" && item.service === "nkjjean-ai-engine"),
+            "Le Worker principal doit être relié à NKJJEAN AI.");
+          assert.ok(engineConfig.services?.some((item) =>
+            item.binding === "NKJ_MODEL" && item.service === "nkjjean-model-runtime"),
+            "La passerelle IA doit être reliée au runtime privé.");
+          assert.equal(runtimeConfig.name, "nkjjean-model-runtime");
+          assert.ok(engine.includes('"/v1/generate"') && engine.includes("env.NKJ_MODEL.fetch"),
+            "Le contrat de génération interne est absent.");
+          assert.ok(engine.includes("NKJ_MODEL_RUNTIME_NOT_CONNECTED"),
+            "L'absence du runtime doit rester explicitement signalée.");
+          for (const name of ["INFERENCE_ORIGIN", "INFERENCE_TOKEN", "INFERENCE_MODEL"]) {
+            assert.ok(runtime.includes(name), "Configuration runtime absente : " + name);
+          }
+          assert.ok(runtime.includes('"/v1/infer"') &&
+            runtime.includes('"/v1/chat/completions"') &&
+            runtime.includes('"Authorization": "Bearer " + token'),
+            "Le relais privé doit utiliser le contrat HTTPS authentifié.");
+          assert.ok(runtime.includes("PRIVATE_INFERENCE_NOT_CONFIGURED"),
+            "L'absence du serveur privé doit rester explicitement signalée.");
+          console.log("Contrats IA vérifiés : liaisons privées, endpoint, authentification et états indisponibles.");
+          NODE
+
+      - name: Vérifier l'installation PWA Chrome et la confidentialité hors ligne
+        run: |
+          node <<'NODE'
+          const fs = require("node:fs");
+          const assert = require("node:assert/strict");
+          const source = fs.readFileSync("Index.ts", "utf8");
+          for (const value of [
+            '"/manifest.webmanifest"',
+            '"/nkj-surv-plat/manifest.webmanifest"',
+            '"/nkj-surv-plat/pwa-icon.svg"',
+            '"/service-worker.js"',
+            '"/pwa-icon.svg"',
+            '"/nkj-surv-plat/pwa-icon.svg"',
+            '"/offline.html"',
+            'id="nkjGlobalNavigation"',
+            'NKJJEAN-STUDIO</a>',
+            'NKJ-SURV-PLAT</a>',
+            'display: "standalone"',
+            'start_url: "/"',
+            'studioPwaResponse(STUDIO_HOME_HTML',
+            'studioPwaResponse(STUDIO_APP_HTML',
+            'studioPwaResponse(STUDIO_ADMIN_HTML',
+            'studioPwaResponse(NKJ_SURV_PLAT_HTML'
+          ]) assert.ok(source.includes(value), 'Élément PWA absent : ' + value);
+          assert.match(source, /name: "NKJJEAN-STUDIO"/);
+          assert.match(source, /short_name: "NKJ-STU"/);
+          assert.match(source, /name: "NKJ-SURV-PLAT"/);
+          assert.match(source, /short_name: "NKJ"/);
+          assert.match(source, /fill="#edf6ff">NKJ<\/text>/);
+          assert.match(source, /fill="#65e0df">STU<\/text>/);
+          assert.match(source, /start_url: "\/nkj-surv-plat"/);
+          assert.match(source, /studioPwaResponse\(NKJ_SURV_PLAT_HTML, \{ appType: "surveillance"/);
+          assert.match(source, /studioPwaResponse\(NKJ_SURV_PLAT_HTML, \{ appType: "surveillance"/);
+          assert.match(source, /request\.mode !== "navigate"\) return/);
+          assert.match(source, /fetch\(request\)\.catch\(async \(\) => \(await caches\.match\(OFFLINE_PAGE\)\)/);
+          assert.ok(!/caches\.open\([^)]*\)[\s\S]{0,300}\/api\//.test(source),
+            "Les API ne doivent jamais être mises en cache.");
+          console.log("PWA : manifeste, icônes Chrome, bouton d'installation et mode hors connexion vérifiés.");
+          NODE
 
       - name: Tester le hachage des mots de passe et les anciens comptes
         run: node tests/auth-password.test.cjs
 
       - name: Vérifier la passerelle IA propriétaire et les routes clientes
         run: node tests/studio-ai.test.cjs
+
+      - name: Tester les routes privées de génération et modification d’images
+        run: node tests/studio-image-api.test.cjs
+
+      - name: Vérifier la syntaxe des Workers IA privés
+        run: |
+          npx --yes esbuild@0.25.0 ai-engine/Index.ts --format=esm --outfile=/tmp/nkjjean-ai-engine-check.mjs
+          npx --yes esbuild@0.25.0 model-runtime/Index.ts --format=esm --outfile=/tmp/nkjjean-model-runtime-check.mjs
+          node -e "for (const f of ['wrangler.jsonc','ai-engine/wrangler.jsonc','model-runtime/wrangler.jsonc']) JSON.parse(require('node:fs').readFileSync(f,'utf8'))"
 
       - name: Vérifier la migration D1 avec SQLite
         run: |
@@ -40,16 +130,44 @@ jobs:
 
           db = sqlite3.connect(":memory:")
           db.execute("PRAGMA foreign_keys = ON")
-          db.execute("CREATE TABLE users (id TEXT PRIMARY KEY)")
+          db.execute("CREATE TABLE users (id TEXT PRIMARY KEY, status TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'suspended', 'pending')))")
           db.execute("CREATE TABLE projects (id TEXT PRIMARY KEY, user_id TEXT REFERENCES users(id))")
+          db.execute("CREATE TABLE published_apps (id TEXT PRIMARY KEY)")
           sql = Path("migrations/0002_project_workspace.sql").read_text(encoding="utf-8")
+          db.executescript(sql)
+          sql = Path("migrations/0003_public_catalog_and_files.sql").read_text(encoding="utf-8")
+          db.executescript(sql)
+          sql = Path("migrations/0004_nkj_surv_plat.sql").read_text(encoding="utf-8")
+          db.executescript(sql)
+          sql = Path("migrations/0005_platform_messages.sql").read_text(encoding="utf-8")
           db.executescript(sql)
           tables = {
               row[0] for row in db.execute(
                   "SELECT name FROM sqlite_master WHERE type='table'"
               )
           }
-          required = {"project_conversations", "project_messages"}
+          required = {"project_conversations", "project_messages", "published_resources", "resource_files", "app_release_files", "resource_reviews", "surveillance_events", "admin_user_messages", "surveillance_audit_log", "platform_messages"}
           assert required.issubset(tables), f"Tables manquantes : {required - tables}"
-          print("Migration SQL valide : conversations et messages créés.")
+          user_columns = {row[1] for row in db.execute("PRAGMA table_info(users)")}
+          assert "deleted_at" in user_columns, "Colonne users.deleted_at manquante"
+          message_columns = {row[1] for row in db.execute("PRAGMA table_info(admin_user_messages)")}
+          assert "expires_at" in message_columns, "Colonne admin_user_messages.expires_at manquante"
+          db.execute("INSERT INTO users (id, status) VALUES ('client-test', 'active')")
+          db.execute("UPDATE users SET status='suspended', deleted_at='2026-10-31T00:00:00Z' WHERE id='client-test'")
+          db.execute("UPDATE users SET status='active', deleted_at=NULL WHERE id='client-test'")
+          try:
+              db.execute("UPDATE users SET status='deleted' WHERE id='client-test'")
+              raise AssertionError("Le statut interdit 'deleted' a ete accepte")
+          except sqlite3.IntegrityError:
+              pass
+          db.execute("INSERT INTO users (id, status) VALUES ('admin-test', 'active')")
+          db.execute("INSERT INTO admin_user_messages (id, user_id, admin_user_id, message) VALUES ('msg-test', 'client-test', 'admin-test', 'Message de test')")
+          created, expires = db.execute("SELECT created_at, expires_at FROM admin_user_messages WHERE id='msg-test'").fetchone()
+          hours = db.execute("SELECT (julianday(?) - julianday(?)) * 24", (expires, created)).fetchone()[0]
+          assert 23.99 <= hours <= 24.01, f"Expiration attendue sous 24h, obtenu : {hours}"
+          db.execute("INSERT INTO platform_messages (id, sender_user_id, recipient_user_id, message) VALUES ('platform-msg-test', 'admin-test', 'client-test', 'Test de messagerie')")
+          created, expires = db.execute("SELECT created_at, expires_at FROM platform_messages WHERE id='platform-msg-test'").fetchone()
+          days = db.execute("SELECT julianday(?) - julianday(?)", (expires, created)).fetchone()[0]
+          assert 364 <= days <= 367, f"Expiration attendue sous un an, obtenue : {days} jours"
+          print("Migrations SQL valides : surveillance, désactivation réversible et messagerie interplateforme testées.")
           PY
