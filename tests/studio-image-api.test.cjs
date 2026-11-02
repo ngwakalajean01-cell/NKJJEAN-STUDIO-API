@@ -27,7 +27,7 @@ assert.ok(runtime.includes("PRIVATE_IMAGE_MODEL_NOT_READY"), "Le runtime privé 
 
 assert.ok(contract.includes("POST /v1/images/generations"), "La documentation de l'API publique est incomplète.");
 assert.ok(contract.includes("POST /v1/images/edits"), "La documentation de l'édition d'images est incomplète.");
-assert.ok(worker.includes('parts[3] === "images"') && worker.includes('["generations","edits"].includes(parts[4])'), "Le générateur authentifié du Studio est absent.");
+assert.match(worker, /parts\[3\]\s*===\s*"images"\s*&&\s*\["generations","edits"\]\.includes\(parts\[4\]\)/, "Le générateur authentifié du Studio est absent.");
 assert.ok(worker.includes('parts[4]==="edits"'), "Le mode édition authentifié du Studio est absent.");
 assert.ok(worker.includes('id="createNkjAiProject"'), "Le bouton de création du projet NKJJEAN AI est absent.");
 assert.ok(worker.includes('NKJJEAN AI — Génération d’affiches'), "Le modèle de projet NKJJEAN AI est absent.");
