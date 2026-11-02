@@ -299,6 +299,76 @@ async function studioApiKey(request, env) {
   return key;
 }
 
+async function studioGenerateImageWithOwnAI(env, options) {
+  if (!env.NKJ_AI || typeof env.NKJ_AI.fetch !== "function") {
+    return { success:false,status:503,error:"Le moteur d'images privé NKJJEAN n'est pas encore relié.",code:"IMAGE_ENGINE_NOT_CONFIGURED" };
+  }
+  const prompt=studioText(options.prompt,20000);
+  if(!prompt)return {success:false,status:400,error:"La description de l'affiche est vide.",code:"EMPTY_IMAGE_PROMPT"};
+  const images=Array.isArray(options.images)?options.images:[];
+  if(images.length>6)return {success:false,status:413,error:"Six photos de référence au maximum sont autorisées.",code:"TOO_MANY_REFERENCE_IMAGES"};
+  let total=0;
+  const safeImages=[];
+  for(const item of images){
+    const data=typeof item==="string"?item:(item&&typeof item.data==="string"?item.data:"");
+    const match=data.match(/^data:image\/(png|jpeg|webp);base64,([A-Za-z0-9+/=]+)$/i);
+    if(!match)return {success:false,status:400,error:"Chaque photo doit être une image PNG, JPEG ou WEBP encodée en base64.",code:"INVALID_REFERENCE_IMAGE"};
+    const bytes=Math.floor(match[2].length*3/4);
+    if(bytes>6*1024*1024)return {success:false,status:413,error:"Une photo dépasse la limite de 6 Mio.",code:"REFERENCE_IMAGE_TOO_LARGE"};
+    total+=bytes;
+    if(total>20*1024*1024)return {success:false,status:413,error:"Les photos dépassent ensemble la limite de 20 Mio.",code:"REFERENCE_IMAGES_TOO_LARGE"};
+    safeImages.push({mime_type:"image/"+match[1].toLowerCase(),data});
+  }
+  if(options.mode==="edit"&&safeImages.length===0)return {success:false,status:400,error:"Ajoutez au moins une photo pour modifier une image.",code:"REFERENCE_IMAGE_REQUIRED"};
+  const quota=await env.DB.prepare("SELECT requests_limit,daily_limit,monthly_limit FROM project_quotas WHERE project_id=? LIMIT 1").bind(options.projectId).first();
+  if(!quota)return {success:false,status:403,error:"Les quotas de ce projet sont introuvables."};
+  const daily=await env.DB.prepare("SELECT COALESCE(SUM(requests_count),0) AS requests FROM usage_logs WHERE project_id=? AND created_at>=strftime('%Y-%m-%dT00:00:00Z','now')").bind(options.projectId).first();
+  const month=await env.DB.prepare("SELECT COALESCE(SUM(requests_count),0) AS requests FROM usage_logs WHERE project_id=? AND substr(created_at,1,7)=strftime('%Y-%m','now')").bind(options.projectId).first();
+  if((quota.daily_limit>0&&Number(daily.requests)>=quota.daily_limit)||(quota.monthly_limit>0&&Number(month.requests)>=quota.monthly_limit)||(quota.requests_limit>0&&Number(month.requests)>=quota.requests_limit)){
+    return {success:false,status:429,error:"Le quota de générations de ce projet est atteint.",code:"PROJECT_QUOTA_EXCEEDED"};
+  }
+  const requestId=randomHex(16),path=options.mode==="edit"?"/v1/images/edits":"/v1/images/generations";
+  let response;
+  try{
+    response=await env.NKJ_AI.fetch(new Request("https://nkjjean-ai.internal"+path,{
+      method:"POST",
+      headers:{"Content-Type":"application/json","Accept":"application/json","X-NKJJEAN-REQUEST-ID":requestId},
+      body:JSON.stringify({
+        model:"nkjjean-image",
+        prompt,
+        images:safeImages,
+        size:studioText(options.size,20)||"1024x1024",
+        style:studioText(options.style,80)||"professional",
+        project:{id:options.projectId,user_id:options.userId},
+        request_id:requestId
+      })
+    }));
+  }catch(error){
+    return {success:false,status:502,error:"Le moteur d'images NKJJEAN est momentanément injoignable.",code:"IMAGE_ENGINE_UNREACHABLE"};
+  }
+  if(!response||!response.ok){
+    let failure={};try{failure=await response.json();}catch(error){}
+    return {success:false,status:response&&response.status===503?503:502,error:failure.error||"Le moteur privé n'a pas pu générer l'image.",code:failure.code||"IMAGE_ENGINE_ERROR"};
+  }
+  let generated;try{generated=await response.json();}catch(error){return {success:false,status:502,error:"Réponse invalide du moteur d'images.",code:"IMAGE_ENGINE_INVALID_RESPONSE"};}
+  const raw=Array.isArray(generated.images)?generated.images:(Array.isArray(generated.data)?generated.data:[]);
+  const output=raw.map(item=>{
+    const b64=item&&typeof item.b64_json==="string"?item.b64_json:(item&&typeof item.image_base64==="string"?item.image_base64:"");
+    const mime= item&&typeof item.mime_type==="string"?item.mime_type:"image/png";
+    return b64&&/^image\/(png|jpeg|webp)$/i.test(mime)?{b64_json:b64,mime_type:mime}:null;
+  }).filter(Boolean).slice(0,1);
+  if(!output.length)return {success:false,status:502,error:"Le moteur n'a renvoyé aucune image exploitable.",code:"IMAGE_ENGINE_EMPTY_RESPONSE"};
+  const now=new Date().toISOString();
+  try{
+    await env.DB.prepare("INSERT INTO usage_logs (id,project_id,api_key_id,endpoint,requests_count,input_tokens,output_tokens,status_code,created_at) VALUES (?,?,?,?,1,0,0,200,?)")
+      .bind(requestId,options.projectId,options.apiKeyId||null,path,now).run();
+    await env.DB.prepare("UPDATE api_keys SET last_used_at=? WHERE id=?").bind(now,options.apiKeyId).run();
+  }catch(error){
+    return {success:false,status:500,error:"L'image a été produite, mais son utilisation n'a pas pu être enregistrée.",code:"IMAGE_USAGE_LOG_FAILED"};
+  }
+  return {success:true,model:studioText(generated.model,120)||"NKJJEAN IA — images",images:output,request_id:requestId};
+}
+
 async function studioGenerateWithOwnAI(env, options) {
   if (!env.NKJ_AI || typeof env.NKJ_AI.fetch !== "function") {
     return { success:false, status:503, error:"Le moteur IA propriétaire NKJJEAN n'est pas encore relié à cette plateforme.", code:"AI_ENGINE_NOT_CONFIGURED" };
@@ -590,6 +660,22 @@ async function studioHandleApi(request, env, url) {
       context:body.context || {}
     });
     return jsonResponse(result,result.success?200:result.status);
+  }
+
+  if ((path === "/v1/images/generations" || path === "/v1/images/edits") && request.method === "POST") {
+    const key=await studioApiKey(request,env);
+    if(!key)return jsonResponse({error:"Clé API invalide, révoquée ou projet indisponible."},401);
+    const size=Number(request.headers.get("Content-Length")||"0");
+    if(size>25*1024*1024)return jsonResponse({success:false,error:"La requête dépasse 25 Mio.",code:"IMAGE_PAYLOAD_TOO_LARGE"},413);
+    let body;
+    try{body=await request.json();if(!body||typeof body!=="object"||Array.isArray(body))throw new Error();}
+    catch(error){return jsonResponse({success:false,error:"Corps JSON invalide.",code:"INVALID_JSON"},400);}
+    const result=await studioGenerateImageWithOwnAI(env,{
+      projectId:key.project_id,userId:key.user_id,apiKeyId:key.api_key_id,
+      mode:path.endsWith("/edits")?"edit":"generate",
+      prompt:body.prompt,images:body.images,size:body.size,style:body.style
+    });
+    return jsonResponse(result,result.success?200:(result.status||503));
   }
 
   if (path === "/v1/usage" && request.method === "POST") {
