@@ -1439,7 +1439,8 @@ input,textarea,select,.field input,.field textarea,.field select{background:#fff
  #nkjMenuPanel .nkj-subnav a,#nkjMenuPanel .nkj-subnav button{width:100%;justify-content:flex-start}
  #nkjContextRail{display:none}
 }
-</style> ? `<style id="nkj-brand-palette-auth">
+</style>`;
+  const paletteStyle = authGate ? `<style id="nkj-brand-palette-auth">
 html,body,.shell,.main{background:#f2cf00!important;color:#12345a!important}
 body::before{background:#f2cf00!important}body::after{background:#080808!important}
 .intro{background:#1769d2!important;color:#f2cf00!important}.intro p,.intro .small{color:#fff1a8!important}
