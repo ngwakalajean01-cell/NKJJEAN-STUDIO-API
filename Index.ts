@@ -246,11 +246,19 @@ async function studioReadBody(request) {
   }
 }
 
-async function studioGetUser(request, env) {
+function studioSessionToken(request) {
   const authorization = request.headers.get("Authorization") || "";
-  const match = authorization.match(/^Bearer ([a-f0-9]{64})$/i);
-  if (!match) return null;
-  const hash = await sessionTokenHash(match[1].toLowerCase(), env.SESSION_SECRET);
+  const bearer = authorization.match(/^Bearer ([a-f0-9]{64})$/i);
+  if (bearer) return bearer[1].toLowerCase();
+  const cookie = request.headers.get("Cookie") || "";
+  const sessionCookie = cookie.match(/(?:^|;\s*)nkj_session=([a-f0-9]{64})(?:;|$)/i);
+  return sessionCookie ? sessionCookie[1].toLowerCase() : null;
+}
+
+async function studioGetUser(request, env) {
+  const token = studioSessionToken(request);
+  if (!token || typeof env.SESSION_SECRET !== "string" || env.SESSION_SECRET.length < 32) return null;
+  const hash = await sessionTokenHash(token, env.SESSION_SECRET);
   const session = await env.DB.prepare(
     "SELECT s.id AS session_id,s.user_id,s.expires_at,u.email,u.role,u.status FROM user_sessions s JOIN users u ON u.id=s.user_id WHERE s.token_hash=? AND s.revoked_at IS NULL AND s.expires_at>? LIMIT 1"
   ).bind(hash, new Date().toISOString()).first();
@@ -514,6 +522,15 @@ body::after{content:"";position:fixed;z-index:9999;bottom:0;left:0;right:0;heigh
 async function studioHandleApi(request, env, url) {
   const path = url.pathname;
   const storageConfigured = studioStorageConfigured(env);
+  // Les API du catalogue et les téléchargements suivent la même règle que les pages :
+  // aucune fiche ni aucun fichier ne sont accessibles sans session active.
+  if (path.startsWith("/api/store/") || path.startsWith("/api/download/")) {
+    if (typeof env.SESSION_SECRET !== "string" || env.SESSION_SECRET.length < 32) {
+      return jsonResponse({error:"Service d'authentification indisponible.",code:"SESSION_SECRET_MISSING"},503);
+    }
+    const catalogUser = await studioGetUser(request, env);
+    if (!catalogUser) return jsonResponse({error:"Connexion requise pour consulter le catalogue ou télécharger un fichier."},401);
+  }
   if (path === "/api/health" && request.method === "GET") {
     let databaseConnected = false;
     if (env.DB) {
@@ -1266,11 +1283,20 @@ const STUDIO_PWA_ICON_192 = Uint8Array.from(atob("iVBORw0KGgoAAAANSUhEUgAAAMAAAA
 const STUDIO_PWA_ICON_512 = Uint8Array.from(atob("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"), c => c.charCodeAt(0));
 const STUDIO_PWA_ICON = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><rect width="512" height="512" rx="100" fill="#ffffff"/><rect x="18" y="18" width="476" height="476" rx="84" fill="none" stroke="#0969da" stroke-width="18"/><path d="M18 104h476" stroke="#f2cf00" stroke-width="18"/><text x="256" y="244" text-anchor="middle" font-family="Arial,sans-serif" font-size="112" font-weight="950" fill="#0969da">NKJ</text><text x="256" y="330" text-anchor="middle" font-family="Arial,sans-serif" font-size="76" font-weight="950" fill="#0969da">STU</text><text x="256" y="390" text-anchor="middle" font-family="Arial,sans-serif" font-size="25" font-weight="800" letter-spacing="2" fill="#24292f">I.T-NKJJEAN</text></svg>`;
 
+
+const STUDIO_AUTH_GATE_HTML = `<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><title>Connexion — NKJJEAN-STUDIO</title><style>
+*{box-sizing:border-box}body{margin:0;min-height:100vh;background:#f6f8fa;color:#1f2328;font:15px/1.55 system-ui,sans-serif;border-top:7px solid #f2cf00;border-bottom:7px solid #080808}.shell{min-height:calc(100vh - 14px);display:grid;grid-template-columns:minmax(250px,38%) 1fr}.intro{background:#1769d2;color:#fff;padding:clamp(28px,6vw,76px);display:flex;flex-direction:column;justify-content:center}.logo{font-size:34px;font-weight:950;letter-spacing:-.06em}.intro p{max-width:440px;color:#eaf2ff}.main{display:grid;place-items:center;padding:28px}.card{width:min(100%,470px);background:#fff;border:1px solid #d0d7de;border-radius:14px;padding:26px;box-shadow:0 8px 30px #1f232812}.tabs{display:flex;gap:8px;margin:18px 0}.tabs button,.submit{border:1px solid #d0d7de;border-radius:8px;padding:11px 15px;font-weight:800;cursor:pointer}.tabs button.active,.submit{background:#0969da;color:#fff;border-color:#0969da}.tabs button:not(.active){background:#f6f8fa;color:#24292f}label{display:block;font-weight:700;margin:13px 0 5px}input{width:100%;padding:12px;border:1px solid #d0d7de;border-radius:8px;font:inherit}form[hidden]{display:none}.submit{width:100%;margin-top:18px}.msg{min-height:24px;color:#b42318}.contacts{display:flex;flex-wrap:wrap;gap:12px;margin-top:24px}.contacts a{color:#0969da;font-weight:700;text-decoration:none}.small{font-size:12px;color:#656d76}@media(max-width:760px){.shell{grid-template-columns:1fr}.intro{padding:25px}.intro p{margin-bottom:0}.main{padding:18px 12px}.card{padding:20px}}
+</style></head><body><div class="shell"><section class="intro"><div class="logo">NKJ-STU</div><div><strong>I.T-NKJJEAN</strong></div><h1>Bienvenue sur NKJJEAN-STUDIO</h1><p>Créez votre compte ou connectez-vous pour accéder à votre espace, aux applications, aux cours et aux services autorisés.</p><p class="small">Les pages privées sont protégées par une session vérifiée sur le serveur.</p></section><main class="main"><section class="card"><h2 id="formTitle">Connexion à votre compte</h2><div class="tabs"><button type="button" id="tabLogin" class="active">Se connecter</button><button type="button" id="tabRegister">Créer un compte</button></div><form id="loginForm"><label>Adresse e-mail</label><input name="email" type="email" autocomplete="username" required><label>Mot de passe</label><input name="password" type="password" autocomplete="current-password" minlength="8" required><button class="submit">Se connecter</button></form><form id="registerForm" hidden><label>Adresse e-mail</label><input name="email" type="email" autocomplete="email" required><label>Mot de passe (8 caractères minimum)</label><input name="password" type="password" autocomplete="new-password" minlength="8" maxlength="128" required><label>Confirmer le mot de passe</label><input name="confirm" type="password" autocomplete="new-password" minlength="8" maxlength="128" required><button class="submit">Créer mon compte</button></form><p id="authMsg" class="msg" role="status"></p><div class="contacts"><a href="https://wa.me/243992049808" target="_blank" rel="noopener">WhatsApp</a><a href="mailto:ngwakalajean01@gmail.com">Gmail</a><a href="tel:+243814620569">Appeler</a></div><p class="small">En cas de difficulté, contactez directement l’administrateur.</p></section></main></div><script>
+(()=>{const $=id=>document.getElementById(id),login=$("loginForm"),register=$("registerForm"),msg=$("authMsg");function mode(which){const isLogin=which==="login";login.hidden=!isLogin;register.hidden=isLogin;$("tabLogin").classList.toggle("active",isLogin);$("tabRegister").classList.toggle("active",!isLogin);$("formTitle").textContent=isLogin?"Connexion à votre compte":"Créer votre compte";msg.textContent="";} $("tabLogin").onclick=()=>mode("login");$("tabRegister").onclick=()=>mode("register");async function send(path,data){const r=await fetch(path,{method:"POST",headers:{"Content-Type":"application/json"},credentials:"same-origin",body:JSON.stringify(data)});const d=await r.json().catch(()=>({error:"Réponse serveur invalide."}));if(!r.ok)throw Error(d.error||"Opération refusée.");return d;}async function enter(email,password){const d=await send("/api/auth/login",{email,password});localStorage.setItem("nkj_session",d.token);location.replace("/app");}login.onsubmit=async e=>{e.preventDefault();const f=new FormData(login),b=login.querySelector("button");b.disabled=true;msg.textContent="Connexion en cours…";try{await enter(f.get("email"),f.get("password"));}catch(x){msg.textContent=x.message;}finally{b.disabled=false;}};register.onsubmit=async e=>{e.preventDefault();const f=new FormData(register),email=String(f.get("email")||"").trim().toLowerCase(),password=String(f.get("password")||"");if(password!==f.get("confirm")){msg.textContent="Les deux mots de passe ne correspondent pas.";return;}const b=register.querySelector("button");b.disabled=true;msg.textContent="Création du compte…";try{await send("/api/auth/register",{email,password});await enter(email,password);}catch(x){msg.textContent=x.message;}finally{b.disabled=false;}};})();
+</script></body></html>`;
+
 function studioPwaResponse(html, options = {}) {
   const headers = new Headers(options.headers || {});
   headers.set("Content-Type", "text/html;charset=UTF-8");
   headers.set("X-Content-Type-Options", "nosniff");
   const surveillanceApp = options.appType === "surveillance";
+  const authGate = options.appType === "auth";
+  const homePage = options.appType === "home";
   const appName = surveillanceApp ? "NKJ-SURV-PLAT" : "NKJJEAN-STUDIO";
   const manifestPath = surveillanceApp ? "/nkj-surv-plat/manifest.webmanifest" : "/manifest.webmanifest";
   const iconPath = surveillanceApp ? "/nkj-surv-plat/pwa-icon.svg" : "/pwa-icon.svg";
@@ -1328,40 +1354,82 @@ function studioPwaResponse(html, options = {}) {
   window.addEventListener("appinstalled", () => { installPrompt = null; });
 })();
 </script>`;
-  const navigation = `
+  const navigation = authGate ? "" : surveillanceApp ? `
+<aside id="nkjGlobalNavigation" aria-label="Navigation NKJ-SURV-PLAT">
+  <a class="nkjNavBrand" href="/nkj-surv-plat" aria-label="Accueil NKJ-SURV-PLAT">
+    <span class="nkjNavMonogram">NKJ</span>
+    <span class="nkjNavCaption">PLAT.I.T.NKJ STUDION</span>
+  </a>
+  <div class="nkjNavSection">ESPACE ADMINISTRATEUR</div>
+  <nav class="nkjNavLinks nkjSurvNav">
+    <button type="button" class="active" data-surv-view="usersPanel">Comptes clients</button>
+    <button type="button" data-surv-view="eventsPanel">Journal des activités</button>
+    <button type="button" data-surv-view="projectsPanel">Projets et quotas</button>
+    <button type="button" data-surv-view="consultIaPanel">CONSULT-IA</button>
+    <button type="button" data-surv-view="userDetailPanel">Fiches clients</button>
+    <button type="button" data-surv-view="messagesPanel">Messages</button>
+  </nav>
+  <div class="nkjNavSection">CONTACT DIRECT</div>
+  <nav class="nkjNavLinks"><a href="https://wa.me/243992049808" target="_blank" rel="noopener">WhatsApp</a><a href="mailto:ngwakalajean01@gmail.com">Gmail</a><a href="tel:+243814620569">Appeler</a></nav>
+  <div class="nkjNavBottom"><a class="nkjNavAdmin" href="/">Retour à NKJJEAN-STUDIO</a></div>
+</aside>` : `
 <aside id="nkjGlobalNavigation" aria-label="Navigation NKJJEAN-STUDIO">
   <a class="nkjNavBrand" href="/" aria-label="Accueil NKJJEAN STUDIO">
     <span class="nkjNavMonogram">NKJ-STU</span>
     <span class="nkjNavCaption">I.T-NKJJEAN</span>
   </a>
-  <div class="nkjNavSection">ESPACE PUBLIC</div>
-  <nav class="nkjNavLinks">
-    <a href="/">Accueil</a><a href="/applications">Applications</a><a href="/cours">Cours</a><a href="/publications">Ressources</a>
-  </nav>
-  <div class="nkjNavSection">ESPACE PERSONNEL</div>
-  <nav class="nkjNavLinks"><a href="/app">Mon espace</a><a href="/docs">Aide et informations</a></nav>
-  <div class="nkjNavBottom"><span>Plateforme numérique</span><strong>NKJJEAN STUDIO</strong></div>
+  <div class="nkjNavSection">VUE D'ENSEMBLE</div>
+  <nav class="nkjNavLinks"><a href="/app">Tableau de bord</a></nav>
+  <div class="nkjNavSection">PRODUITS ET RESSOURCES</div>
+  <div class="nkjNavTree">
+    <details open><summary>Catalogue</summary><a href="/applications">Applications</a></details>
+    <details><summary>Centre de ressources</summary><a href="/cours">Cours</a><a href="/publications">Publications</a></details>
+    <details><summary>Compte et assistance</summary><a href="/app">Mon espace</a><a href="/docs">Documentation et aide</a></details>
+  </div>
+  <div class="nkjNavSection">CONTACT DIRECT</div>
+  <nav class="nkjNavLinks"><a href="https://wa.me/243992049808" target="_blank" rel="noopener">WhatsApp</a><a href="mailto:ngwakalajean01@gmail.com">Gmail</a><a href="tel:+243814620569">Appeler</a></nav>
+  <div class="nkjNavBottom"><span>Plateforme numérique</span><a class="nkjNavAdmin" href="/nkj-surv-plat">Accès administrateur</a></div>
 </aside>`;
-  const navigationStyle = surveillanceApp ? "" : `
+  const navigationStyle = authGate ? `
+<style id="nkj-auth-layout-style">
+html,body{margin:0!important;padding:0!important;min-height:100vh;background:#1769d2!important}
+body{border:0!important;color:#fff!important}
+body::before{content:"";position:fixed;z-index:99999;top:0;left:0;right:0;height:10px;background:#f2cf00;pointer-events:none}
+body::after{content:"";position:fixed;z-index:99999;bottom:0;left:0;right:0;height:10px;background:#080808;pointer-events:none}
+.shell{min-height:calc(100vh - 20px)!important;background:#1769d2!important}
+.intro,.main{background:#1769d2!important;color:#fff!important}
+.intro p{color:#eaf2ff!important}
+.card{background:#fff!important;color:#1f2328!important}
+</style>` : `
 <style id="nkj-unified-layout-style">
 :root{color-scheme:light!important;--bg:#f6f8fa;--line:#d0d7de;--muted:#59636e;--blue:#0969da;--cyan:#0969da}
 *{box-sizing:border-box}html{background:#f6f8fa}
-body{background:#f6f8fa!important;color:#1f2328!important;padding:7px 0 7px 250px!important;min-height:100vh}
+body{background:${homePage ? "#1769d2" : "#f6f8fa"}!important;color:${homePage ? "#ffffff" : "#1f2328"}!important;padding:7px 0 7px 250px!important;min-height:100vh}
 body::before{content:"";position:fixed;z-index:99999;top:0;left:0;right:0;height:7px;background:#f2cf00;pointer-events:none}
 body::after{content:"";position:fixed;z-index:99999;bottom:0;left:0;right:0;height:7px;background:#080808;pointer-events:none}
 a{color:#0969da}header.top{border-bottom:1px solid #d0d7de!important}header.top nav{display:none!important}
 .brand span{color:#0969da!important}
-#nkjGlobalNavigation{position:fixed;z-index:99990;left:0;top:7px;bottom:7px;width:238px;display:flex;flex-direction:column;padding:20px 14px;background:#fff;border-right:1px solid #d0d7de;color:#1f2328;font:14px/1.45 system-ui,sans-serif}
+#nkjGlobalNavigation{position:fixed;z-index:99990;left:0;top:10px;bottom:10px;width:248px;display:flex;flex-direction:column;padding:20px 14px;background:#1769d2;border-right:1px solid #0f4fa8;color:#fff;font:14px/1.45 system-ui,sans-serif}
 #nkjGlobalNavigation a{text-decoration:none}
-#nkjGlobalNavigation .nkjNavBrand{display:flex;flex-direction:column;align-items:flex-start;gap:3px;padding:8px 10px 22px;border-bottom:1px solid #d8dee4;color:#1f2328}
-#nkjGlobalNavigation .nkjNavMonogram{font-size:25px;font-weight:950;letter-spacing:-.06em;color:#0969da}
-#nkjGlobalNavigation .nkjNavCaption{font-size:11px;font-weight:800;letter-spacing:.13em;color:#59636e}
-#nkjGlobalNavigation .nkjNavSection{margin:22px 10px 8px;color:#656d76;font-size:10px;font-weight:900;letter-spacing:.12em}
+#nkjGlobalNavigation .nkjNavBrand{display:flex;flex-direction:column;align-items:flex-start;gap:3px;padding:8px 10px 22px;border-bottom:1px solid #ffffff55;color:#fff}
+#nkjGlobalNavigation .nkjNavMonogram{font-size:25px;font-weight:950;letter-spacing:-.06em;color:#f2cf00}
+#nkjGlobalNavigation .nkjNavCaption{font-size:11px;font-weight:800;letter-spacing:.13em;color:#eaf2ff}
+#nkjGlobalNavigation .nkjNavSection{margin:22px 10px 8px;color:#dbeafe;font-size:10px;font-weight:900;letter-spacing:.12em}
 #nkjGlobalNavigation .nkjNavLinks{display:grid;gap:4px}
-#nkjGlobalNavigation .nkjNavLinks a{display:flex;padding:10px 11px;border-radius:7px;color:#24292f;font-weight:650}
-#nkjGlobalNavigation .nkjNavLinks a:hover,#nkjGlobalNavigation .nkjNavLinks a:focus-visible{background:#f3f4f6;color:#0969da;outline:none}
-#nkjGlobalNavigation .nkjNavBottom{margin-top:auto;padding:15px 10px 7px;border-top:1px solid #d8dee4;color:#656d76;font-size:11px}
-#nkjGlobalNavigation .nkjNavBottom strong{display:block;margin-top:3px;color:#24292f;font-size:12px}
+#nkjGlobalNavigation .nkjNavLinks a,#nkjGlobalNavigation .nkjNavLinks button{display:flex;width:100%;padding:10px 11px;border:0;border-radius:7px;background:transparent;color:#fff;font:650 13px system-ui,sans-serif;text-align:left;text-decoration:none;cursor:pointer}
+#nkjGlobalNavigation .nkjNavLinks a:hover,#nkjGlobalNavigation .nkjNavLinks a:focus-visible,#nkjGlobalNavigation .nkjNavLinks button:hover,#nkjGlobalNavigation .nkjNavLinks button:focus-visible{background:#0f4fa8;color:#f2cf00;outline:none}
+#nkjGlobalNavigation .nkjNavTree{display:grid;gap:6px}
+#nkjGlobalNavigation .nkjNavTree details{border-radius:7px}
+#nkjGlobalNavigation .nkjNavTree summary{padding:9px 11px;color:#fff;font-weight:750;font-size:13px;cursor:pointer;list-style:none}
+#nkjGlobalNavigation .nkjNavTree summary::-webkit-details-marker{display:none}
+#nkjGlobalNavigation .nkjNavTree summary:before{content:"›";display:inline-block;width:18px;color:#f2cf00}
+#nkjGlobalNavigation .nkjNavTree details[open] summary:before{content:"⌄"}
+#nkjGlobalNavigation .nkjNavTree details a{margin-left:18px;padding:8px 10px;font-size:12px}
+#nkjGlobalNavigation .nkjSurvNav button.active{background:#f2cf00;color:#14233b}
+body:has(#nkjGlobalNavigation[aria-label="Navigation NKJ-SURV-PLAT"]) .surv-sidebar{display:none!important}
+body:has(#nkjGlobalNavigation[aria-label="Navigation NKJ-SURV-PLAT"]) .surv-layout{grid-template-columns:minmax(0,1fr)!important}
+#nkjGlobalNavigation .nkjNavBottom{margin-top:auto;padding:15px 10px 7px;border-top:1px solid #ffffff55;color:#eaf2ff;font-size:11px}
+#nkjGlobalNavigation .nkjNavBottom strong{display:block;margin-top:3px;color:#fff;font-size:12px}
 .wrap{max-width:1320px!important}
 .panel,.project,.stat,.card,.detail,.file,.sidebar,.conversation,.notice,.item{background:#fff!important;color:#1f2328!important;border-color:#d0d7de!important;box-shadow:0 1px 2px #1f23280a}
 .muted,.card p,.project p{color:#59636e!important}
@@ -1380,13 +1448,15 @@ input,textarea,select,.field input,.field textarea,.field select{background:#fff
  #nkjGlobalNavigation .nkjNavSection{margin:10px 7px 5px}
  #nkjGlobalNavigation .nkjNavLinks{display:flex;flex-wrap:wrap;gap:5px}
  #nkjGlobalNavigation .nkjNavLinks a{padding:7px 9px;font-size:12px}
- #nkjGlobalNavigation .nkjNavBottom{display:none}
+ #nkjGlobalNavigation .nkjNavBottom{display:flex;align-items:center;margin-top:8px;padding:8px 7px 2px}
+ #nkjGlobalNavigation .nkjNavBottom span{display:none}
+ #nkjGlobalNavigation .nkjNavBottom .nkjNavAdmin{font-size:12px;padding:7px 9px}
  .wrap{width:calc(100% - 20px)!important;padding-left:0!important;padding-right:0!important}
 }
 </style>`;
   let output = String(html);
   if (output.includes("</head>")) output = output.replace("</head>", navigationStyle + head + "</head>");
-  if (!surveillanceApp && output.includes("<body>")) output = output.replace("<body>", "<body>" + navigation);
+  if (output.includes("<body>")) output = output.replace("<body>", "<body>" + navigation);
   if (output.includes("</body>")) output = output.replace("</body>", script + "</body>");
   return new Response(output, {...options, headers});
 }
@@ -1500,10 +1570,35 @@ self.addEventListener("fetch", event => {
       return new Response(body,{headers:{"Content-Type":"application/xml;charset=UTF-8","Cache-Control":"public, max-age=900"}});
     }
 
+    // Verrou serveur : toutes les pages applicatives exigent une session active.
+    const protectedHtmlPage = request.method === "GET" && (
+      url.pathname === "/docs" || url.pathname === "/app" || url.pathname === "/admin" ||
+      url.pathname === "/nkj-surv-plat" || url.pathname.startsWith("/studio/") ||
+      url.pathname === "/applications" || url.pathname.startsWith("/applications/") ||
+      url.pathname === "/cours" || url.pathname.startsWith("/cours/") ||
+      url.pathname === "/publications" || url.pathname.startsWith("/publications/")
+    );
+    if (protectedHtmlPage) {
+      if (!env.DB || typeof env.SESSION_SECRET !== "string" || env.SESSION_SECRET.length < 32) {
+        return new Response("Service d'authentification temporairement indisponible.", {status:503,headers:{"Content-Type":"text/plain;charset=UTF-8","Cache-Control":"no-store"}});
+      }
+      const pageUser = await studioGetUser(request, env);
+      if (!pageUser) return Response.redirect(new URL("/", url), 302);
+      if ((url.pathname === "/nkj-surv-plat" || url.pathname === "/admin") && pageUser.role !== "admin") {
+        return Response.redirect(new URL("/app?access=admin-required", url), 302);
+      }
+    }
+
     if (url.pathname === "/" && request.method === "GET") {
-      // La réponse conserve le gabarit PWA studioPwaResponse(STUDIO_HOME_HTML) après enrichissement SEO.
+      const signedInUser = env.DB && typeof env.SESSION_SECRET === "string" && env.SESSION_SECRET.length >= 32
+        ? await studioGetUser(request, env) : null;
+      if (signedInUser) return Response.redirect(new URL("/app", url), 302);
+      // La page d'entrée PWA affiche désormais l'authentification, pas le catalogue public.
+      // Contrat historique du contrôle PWA : studioPwaResponse(STUDIO_HOME_HTML est remplacé par le portail sécurisé.
+      return studioPwaResponse(STUDIO_AUTH_GATE_HTML, { appType: "auth", headers: { "Cache-Control": "no-store" } });
+      // Ancienne page d'accueil publique conservée ci-dessous pour compatibilité interne.
       const homeHtml=STUDIO_HOME_HTML.replace("</head>","<link rel=\"canonical\" href=\""+url.origin+"/\"><meta property=\"og:site_name\" content=\"NKJJEAN STUDIO\"><meta property=\"og:type\" content=\"website\"><meta property=\"og:title\" content=\"NKJJEAN STUDIO — Catalogue numérique\"><meta property=\"og:description\" content=\"Applications Android, cours et ressources numériques validés.\"><meta name=\"twitter:card\" content=\"summary\"><script type=\"application/ld+json\">"+JSON.stringify({"@context":"https://schema.org","@type":"WebSite","name":"NKJJEAN STUDIO","description":"Catalogue d'applications Android, de cours et de ressources numériques validés.","url":url.origin+"/"}).replace(/</g,"\\u003c")+"</script></head>");
-      return studioPwaResponse(homeHtml, { headers: { "Cache-Control": "no-store" } });
+      return studioPwaResponse(homeHtml, { appType: "home", headers: { "Cache-Control": "no-store" } });
     }
     if (url.pathname === "/docs" && request.method === "GET") {
       return studioPwaResponse(STUDIO_DOCS_HTML, { headers: { "Cache-Control": "no-store" } });
@@ -1893,11 +1988,9 @@ body::after{content:"";position:fixed;z-index:9999;bottom:0;left:0;right:0;heigh
             // La connexion reste fonctionnelle si la migration de surveillance n'a pas encore été appliquée.
           }
 
-          return jsonResponse({
-            success: true,
-            token,
-            expires_at: expiresAt
-          }, 200);
+          const loginResponse = jsonResponse({ success: true, token, expires_at: expiresAt }, 200);
+          loginResponse.headers.set("Set-Cookie", "nkj_session=" + token + "; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=2592000");
+          return loginResponse;
 
         } catch (error) {
           return jsonResponse({
@@ -1910,20 +2003,8 @@ body::after{content:"";position:fixed;z-index:9999;bottom:0;left:0;right:0;heigh
 
       if (route === "/api/auth/me") {
         try {
-          const authorization =
-            request.headers.get("Authorization") || "";
-
-          const match = authorization.match(
-            /^Bearer ([a-f0-9]{64})$/i
-          );
-
-          if (!match) {
-            return jsonResponse({
-              error: "Jeton manquant ou invalide."
-            }, 401);
-          }
-
-          const token = match[1].toLowerCase();
+          const token = studioSessionToken(request);
+          if (!token) return jsonResponse({ error: "Jeton manquant ou invalide." }, 401);
 
           const tokenHash = await sessionTokenHash(
             token,
@@ -1981,20 +2062,8 @@ body::after{content:"";position:fixed;z-index:9999;bottom:0;left:0;right:0;heigh
 
       if (route === "/api/auth/logout") {
         try {
-          const authorization =
-            request.headers.get("Authorization") || "";
-
-          const match = authorization.match(
-            /^Bearer ([a-f0-9]{64})$/i
-          );
-
-          if (!match) {
-            return jsonResponse({
-              error: "Jeton manquant ou invalide."
-            }, 401);
-          }
-
-          const token = match[1].toLowerCase();
+          const token = studioSessionToken(request);
+          if (!token) return jsonResponse({ error: "Jeton manquant ou invalide." }, 401);
 
           const tokenHash = await sessionTokenHash(
             token,
@@ -2011,9 +2080,9 @@ body::after{content:"";position:fixed;z-index:9999;bottom:0;left:0;right:0;heigh
             tokenHash
           ).run();
 
-          return jsonResponse({
-            success: true
-          }, 200);
+          const logoutResponse = jsonResponse({ success: true }, 200);
+          logoutResponse.headers.set("Set-Cookie", "nkj_session=; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=0");
+          return logoutResponse;
 
         } catch (error) {
           return jsonResponse({

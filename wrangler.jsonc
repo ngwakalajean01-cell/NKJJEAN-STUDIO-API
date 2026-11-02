@@ -23,7 +23,8 @@
     "d1_databases": [
       {
         "binding": "DB",
-        "database_id": "00000003-00000007-00005116-1046bd10810158319b93d547ba7690c2"
+        "database_name": "nkjjean-studio-preview-db",
+        "database_id": "00000000-00000006-00005117-1f936775b29a1364f5ad60fa0386efab"
       }
     ]
   }
