@@ -1,0 +1,15 @@
+{
+  "name": "nkjjean-ai-engine",
+  "main": "Index.ts",
+  "compatibility_date": "2026-10-31",
+  "services": [
+    {
+      "binding": "NKJ_MODEL",
+      "service": "nkjjean-model-runtime"
+    }
+  ],
+  "vars": {
+    "NKJ_MODEL_NAME": "nkjjean-model"
+  },
+  "workers_dev": false
+}
