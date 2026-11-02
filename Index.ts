@@ -662,8 +662,9 @@ async function studioHandleApi(request, env, url) {
       const body=await studioReadBody(request);
       const status=body.status==="active"?"active":body.status==="suspended"?"suspended":null;
       if(!status)return jsonResponse({error:"Statut non autorisé."},400);
-      const target=await env.DB.prepare("SELECT id,email,deleted_at FROM users WHERE id=? LIMIT 1").bind(targetId).first();
+      const target=await env.DB.prepare("SELECT id,email,role,deleted_at FROM users WHERE id=? LIMIT 1").bind(targetId).first();
       if(!target)return jsonResponse({error:"Compte introuvable."},404);
+      if(target.role==="admin")return jsonResponse({error:"Les comptes administrateurs sont protégés contre la suspension depuis cette console."},403);
       await env.DB.batch([
         env.DB.prepare("UPDATE users SET status=?,deleted_at=CASE WHEN ?='active' THEN NULL ELSE deleted_at END WHERE id=?").bind(status,status,targetId),
         ...(status==="suspended"?[env.DB.prepare("UPDATE user_sessions SET revoked_at=? WHERE user_id=? AND revoked_at IS NULL").bind(new Date().toISOString(),targetId)]:[]),
@@ -685,8 +686,9 @@ async function studioHandleApi(request, env, url) {
     if (parts.length===4 && parts[2]==="users" && parts[3] && request.method==="DELETE") {
       const targetId=parts[3];
       if(targetId===user.id)return jsonResponse({error:"La suppression de votre propre compte administrateur est interdite depuis cette console."},400);
-      const target=await env.DB.prepare("SELECT id,email FROM users WHERE id=? LIMIT 1").bind(targetId).first();
+      const target=await env.DB.prepare("SELECT id,email,role FROM users WHERE id=? LIMIT 1").bind(targetId).first();
       if(!target)return jsonResponse({error:"Compte introuvable."},404);
+      if(target.role==="admin")return jsonResponse({error:"Les comptes administrateurs sont protégés contre la désactivation depuis cette console."},403);
       // Suppression logique : conservation des traces et des données pour éviter une perte irréversible.
       await env.DB.batch([
         env.DB.prepare("UPDATE users SET status='suspended',deleted_at=? WHERE id=?").bind(new Date().toISOString(),targetId),
