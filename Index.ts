@@ -1264,7 +1264,7 @@ async function studioHandleApi(request, env, url) {
 // Les pages privées restent réseau uniquement : aucune session/API n'est mise en cache.
 const STUDIO_PWA_ICON_192 = Uint8Array.from(atob("iVBORw0KGgoAAAANSUhEUgAAAMAAAADACAMAAABlApw1AAADAFBMVEUHER9l4N/t9v8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEj4HfAAABW0lEQVR42u3aUW6DMAAE0W7vf+ieoG2wAa/lN/+ezUhRQiBfXwAAAAAAAAAAAAAAAEAZ+Y1y9/8jaVafEZBa86cz6RSfFJBC77WhtGnPC0iVdWQqPdLBrZQ4Dw5Ig3JqLcuNxwdkrfCGvSz0Cbi4mNKALLEJuLyZ4oC87BIwsJrygLxmeiog74gEjA1ni4A8rREwOp1tAvKcRMD4eLYKyBMKATPz2S4g9woEzL2AbBmQu44vC8gtpwVMvITMH14ckMmzAqYDMnO0IiACvIV8CsUXmUuJUwN2v5ze/QeN38Ruq7gzt3PA7jd3PR/wiMlTyp0Ddn/Q7b8SiwNeMz0U8KbqiYCXXQKGNosDltgEDCyWBiz0Cbi8Vxiw3Hh6QINyZq3EeW5Aj3Rsq8o6MNWmPS6g0HtpqFN8UECt+cOZZvURAeVuAACAt/n+AwECBAgQIAAAAAAAAADA/vwAYm0io5xuQMkAAAAASUVORK5CYII="), c => c.charCodeAt(0));
 const STUDIO_PWA_ICON_512 = Uint8Array.from(atob("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"), c => c.charCodeAt(0));
-const STUDIO_PWA_ICON = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><defs><linearGradient id="studioBg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#174a75"/><stop offset="1" stop-color="#061321"/></linearGradient></defs><rect width="512" height="512" rx="112" fill="url(#studioBg)"/><rect x="38" y="38" width="436" height="436" rx="88" fill="none" stroke="#65e0df" stroke-width="10"/><text x="256" y="278" text-anchor="middle" font-family="Arial,sans-serif" font-size="104" font-weight="900" letter-spacing="-5" fill="#edf6ff">NKJ</text><text x="256" y="365" text-anchor="middle" font-family="Arial,sans-serif" font-size="66" font-weight="900" letter-spacing="3" fill="#65e0df">STU</text></svg>`;
+const STUDIO_PWA_ICON = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><rect width="512" height="512" rx="100" fill="#ffffff"/><rect x="18" y="18" width="476" height="476" rx="84" fill="none" stroke="#0969da" stroke-width="18"/><path d="M18 104h476" stroke="#f2cf00" stroke-width="18"/><text x="256" y="244" text-anchor="middle" font-family="Arial,sans-serif" font-size="112" font-weight="950" fill="#0969da">NKJ</text><text x="256" y="330" text-anchor="middle" font-family="Arial,sans-serif" font-size="76" font-weight="950" fill="#0969da">STU</text><text x="256" y="390" text-anchor="middle" font-family="Arial,sans-serif" font-size="25" font-weight="800" letter-spacing="2" fill="#24292f">I.T-NKJJEAN</text></svg>`;
 
 function studioPwaResponse(html, options = {}) {
   const headers = new Headers(options.headers || {});
@@ -1276,13 +1276,17 @@ function studioPwaResponse(html, options = {}) {
   const iconPath = surveillanceApp ? "/nkj-surv-plat/pwa-icon.svg" : "/pwa-icon.svg";
   const head = `
 <link rel="manifest" href="${manifestPath}">
-<meta name="theme-color" content="#07111f">
+<meta name="theme-color" content="#1769c2">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="${appName}">
 <link rel="icon" href="${iconPath}" type="image/svg+xml">
-<style id="nkj-pwa-install-style">#nkjPwaInstall{position:fixed;left:12px;bottom:12px;z-index:99999;border:1px solid #65e0df;border-radius:999px;padding:10px 15px;background:#1769c2;color:#ffffff;font:700 13px system-ui;box-shadow:0 5px 22px #12345a33;display:none}#nkjPwaInstall:focus{outline:3px solid #65e0df;outline-offset:3px}</style>`;
+<style id="nkj-pwa-install-style">
+#nkjPwaInstall{position:fixed;right:18px;bottom:18px;z-index:100000;border:2px solid #f2cf00;border-radius:999px;padding:12px 18px;background:#111;color:#f2cf00;font:800 13px system-ui;box-shadow:0 5px 22px #0002;display:inline-flex;align-items:center;gap:8px;cursor:pointer}
+#nkjPwaInstall:focus{outline:3px solid #1769c2;outline-offset:3px}
+@media(max-width:600px){#nkjPwaInstall{right:12px;bottom:12px;padding:11px 14px}}
+</style>`;
   const script = `
 <script id="nkj-pwa-install-script">
 (()=> {
@@ -1295,30 +1299,93 @@ function studioPwaResponse(html, options = {}) {
   button.type = "button";
   button.textContent = "Installer ${appName}";
   button.setAttribute("aria-label","Installer ${appName} sur cet appareil");
+  button.title = "Installer cette plateforme sur votre appareil";
   document.body.appendChild(button);
   window.addEventListener("beforeinstallprompt", event => {
     event.preventDefault();
     installPrompt = event;
-    button.style.display = "block";
+    button.textContent = "Installer ${appName}";
   });
   button.addEventListener("click", async () => {
-    if (!installPrompt) return;
-    installPrompt.prompt();
-    try { await installPrompt.userChoice; } catch (_) {}
-    installPrompt = null;
-    button.style.display = "none";
+    if (installPrompt) {
+      installPrompt.prompt();
+      try { await installPrompt.userChoice; } catch (_) {}
+      installPrompt = null;
+      return;
+    }
+    const ua = navigator.userAgent || "";
+    let instructions;
+    if (/iphone|ipad|ipod/i.test(ua)) {
+      instructions = "Pour installer ${appName} sur iPhone ou iPad : ouvrez le menu Partager de Safari, puis choisissez « Sur l’écran d’accueil » et confirmez.";
+    } else if (/android/i.test(ua)) {
+      instructions = "Pour installer ${appName} sur Android : ouvrez le menu ⋮ de Chrome, choisissez « Installer l’application » ou « Ajouter à l’écran d’accueil », puis confirmez.";
+    } else {
+      instructions = "Pour installer ${appName} sur ordinateur : dans Chrome ou Edge, ouvrez le menu du navigateur puis choisissez « Installer cette application » ou utilisez l’icône d’installation située dans la barre d’adresse.";
+    }
+    window.alert(instructions);
   });
-  window.addEventListener("appinstalled", () => {
-    installPrompt = null;
-    button.style.display = "none";
-  });
+  window.addEventListener("appinstalled", () => { installPrompt = null; });
 })();
 </script>`;
-  const navigation = `<nav id="nkjGlobalNavigation" aria-label="Navigation des plateformes"><a class="nkjNavBrand" href="/">NKJJEAN-STUDIO</a><a href="/applications">Applications</a><a href="/cours">Cours</a><a href="/publications">Ressources</a><a href="/app">Espace client</a></nav>`;
-  const navigationStyle = `<style id="nkj-global-navigation-style">#nkjGlobalNavigation{position:relative;z-index:9990;display:flex;align-items:center;justify-content:center;gap:9px;flex-wrap:wrap;padding:10px 14px;background:linear-gradient(110deg,#ffffff,#eaf3ff);border-bottom:1px solid #c9dcf4;color:#174a7c;font:700 12px/1.4 system-ui,sans-serif}#nkjGlobalNavigation a{display:inline-flex;align-items:center;padding:7px 10px;border-radius:8px;color:inherit;text-decoration:none;border:1px solid transparent}#nkjGlobalNavigation a:hover,#nkjGlobalNavigation a:focus-visible{background:#e1efff;border-color:#1769c2;outline:none}#nkjGlobalNavigation .nkjNavBrand{font-weight:950;letter-spacing:.04em;color:#1769c2}#nkjGlobalNavigation .nkjNavAdmin{border-color:#65e0df;background:#eaf2fc}@media(max-width:560px){#nkjGlobalNavigation{gap:5px;padding:8px 6px}#nkjGlobalNavigation a{padding:7px 8px;font-size:11px}}</style>`;
+  const navigation = `
+<aside id="nkjGlobalNavigation" aria-label="Navigation NKJJEAN-STUDIO">
+  <a class="nkjNavBrand" href="/" aria-label="Accueil NKJJEAN STUDIO">
+    <span class="nkjNavMonogram">NKJ-STU</span>
+    <span class="nkjNavCaption">I.T-NKJJEAN</span>
+  </a>
+  <div class="nkjNavSection">ESPACE PUBLIC</div>
+  <nav class="nkjNavLinks">
+    <a href="/">Accueil</a><a href="/applications">Applications</a><a href="/cours">Cours</a><a href="/publications">Ressources</a>
+  </nav>
+  <div class="nkjNavSection">ESPACE PERSONNEL</div>
+  <nav class="nkjNavLinks"><a href="/app">Mon espace</a><a href="/docs">Aide et informations</a></nav>
+  <div class="nkjNavBottom"><span>Plateforme numérique</span><strong>NKJJEAN STUDIO</strong></div>
+</aside>`;
+  const navigationStyle = surveillanceApp ? "" : `
+<style id="nkj-unified-layout-style">
+:root{color-scheme:light!important;--bg:#f6f8fa;--line:#d0d7de;--muted:#59636e;--blue:#0969da;--cyan:#0969da}
+*{box-sizing:border-box}html{background:#f6f8fa}
+body{background:#f6f8fa!important;color:#1f2328!important;padding:7px 0 7px 250px!important;min-height:100vh}
+body::before{content:"";position:fixed;z-index:99999;top:0;left:0;right:0;height:7px;background:#f2cf00;pointer-events:none}
+body::after{content:"";position:fixed;z-index:99999;bottom:0;left:0;right:0;height:7px;background:#080808;pointer-events:none}
+a{color:#0969da}header.top{border-bottom:1px solid #d0d7de!important}header.top nav{display:none!important}
+.brand span{color:#0969da!important}
+#nkjGlobalNavigation{position:fixed;z-index:99990;left:0;top:7px;bottom:7px;width:238px;display:flex;flex-direction:column;padding:20px 14px;background:#fff;border-right:1px solid #d0d7de;color:#1f2328;font:14px/1.45 system-ui,sans-serif}
+#nkjGlobalNavigation a{text-decoration:none}
+#nkjGlobalNavigation .nkjNavBrand{display:flex;flex-direction:column;align-items:flex-start;gap:3px;padding:8px 10px 22px;border-bottom:1px solid #d8dee4;color:#1f2328}
+#nkjGlobalNavigation .nkjNavMonogram{font-size:25px;font-weight:950;letter-spacing:-.06em;color:#0969da}
+#nkjGlobalNavigation .nkjNavCaption{font-size:11px;font-weight:800;letter-spacing:.13em;color:#59636e}
+#nkjGlobalNavigation .nkjNavSection{margin:22px 10px 8px;color:#656d76;font-size:10px;font-weight:900;letter-spacing:.12em}
+#nkjGlobalNavigation .nkjNavLinks{display:grid;gap:4px}
+#nkjGlobalNavigation .nkjNavLinks a{display:flex;padding:10px 11px;border-radius:7px;color:#24292f;font-weight:650}
+#nkjGlobalNavigation .nkjNavLinks a:hover,#nkjGlobalNavigation .nkjNavLinks a:focus-visible{background:#f3f4f6;color:#0969da;outline:none}
+#nkjGlobalNavigation .nkjNavBottom{margin-top:auto;padding:15px 10px 7px;border-top:1px solid #d8dee4;color:#656d76;font-size:11px}
+#nkjGlobalNavigation .nkjNavBottom strong{display:block;margin-top:3px;color:#24292f;font-size:12px}
+.wrap{max-width:1320px!important}
+.panel,.project,.stat,.card,.detail,.file,.sidebar,.conversation,.notice,.item{background:#fff!important;color:#1f2328!important;border-color:#d0d7de!important;box-shadow:0 1px 2px #1f23280a}
+.muted,.card p,.project p{color:#59636e!important}
+input,textarea,select,.field input,.field textarea,.field select{background:#fff!important;color:#1f2328!important;border:1px solid #d0d7de!important}
+.btn{background:#0969da!important;color:#fff!important;border:1px solid #0969da!important}
+.alt,.secondary,.chip,.tab,.tabs a{background:#f6f8fa!important;color:#24292f!important;border:1px solid #d0d7de!important}
+.chip.active,.tab.active{background:#0969da!important;color:#fff!important;border-color:#0969da!important}
+.danger{background:#cf222e!important;color:#fff!important}.notice{border-left-color:#0969da!important}
+.message.user{background:#ddf4ff!important;color:#1f2328!important;border-color:#80ccff!important}
+.message.assistant{background:#f6f8fa!important;color:#1f2328!important;border-color:#d0d7de!important}
+@media(max-width:760px){
+ body{padding:7px 0!important}
+ #nkjGlobalNavigation{position:relative;top:auto;bottom:auto;left:auto;width:auto;margin:0 10px 14px;border:1px solid #d0d7de;border-radius:10px;padding:10px}
+ #nkjGlobalNavigation .nkjNavBrand{padding:5px 7px 10px}
+ #nkjGlobalNavigation .nkjNavMonogram{font-size:20px}
+ #nkjGlobalNavigation .nkjNavSection{margin:10px 7px 5px}
+ #nkjGlobalNavigation .nkjNavLinks{display:flex;flex-wrap:wrap;gap:5px}
+ #nkjGlobalNavigation .nkjNavLinks a{padding:7px 9px;font-size:12px}
+ #nkjGlobalNavigation .nkjNavBottom{display:none}
+ .wrap{width:calc(100% - 20px)!important;padding-left:0!important;padding-right:0!important}
+}
+</style>`;
   let output = String(html);
   if (output.includes("</head>")) output = output.replace("</head>", navigationStyle + head + "</head>");
-  if (output.includes("<body>")) output = output.replace("<body>", "<body>" + navigation);
+  if (!surveillanceApp && output.includes("<body>")) output = output.replace("<body>", "<body>" + navigation);
   if (output.includes("</body>")) output = output.replace("</body>", script + "</body>");
   return new Response(output, {...options, headers});
 }
@@ -1353,13 +1420,13 @@ export default {
         display: "standalone",
         display_override: ["standalone", "minimal-ui"],
         orientation: "any",
-        background_color: "#f4f8ff",
+        background_color: "#ffffff",
         theme_color: "#1769c2",
         icons: [{src:"/nkj-surv-plat/pwa-icon.svg",sizes:"any",type:"image/svg+xml",purpose:"any maskable"}]
       }), {headers:{"Content-Type":"application/manifest+json;charset=UTF-8","Cache-Control":"public, max-age=3600","X-Content-Type-Options":"nosniff"}});
     }
     if (url.pathname === "/nkj-surv-plat/pwa-icon.svg" && request.method === "GET") {
-      const icon = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><rect width="512" height="512" rx="110" fill="#f4f8ff"/><path d="M256 42 438 112v126c0 118-75 193-182 232C149 431 74 356 74 238V112z" fill="#1769c2" stroke="#ffffff" stroke-width="18"/><text x="256" y="280" text-anchor="middle" font-family="Arial,sans-serif" font-size="132" font-weight="900" fill="#ffffff">NKJ</text><path d="M155 330h202" stroke="#f4f8ff" stroke-width="14" stroke-linecap="round"/></svg>';
+      const icon = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><rect width="512" height="512" rx="92" fill="#ffffff"/><path d="M256 34 438 98v132c0 111-73 185-182 228C147 415 74 341 74 230V98z" fill="#1769c2" stroke="#f2cf00" stroke-width="12"/><text x="256" y="235" text-anchor="middle" font-family="Arial,sans-serif" font-size="132" font-weight="900" fill="#ffffff">NKJ</text><text x="256" y="300" text-anchor="middle" font-family="Arial,sans-serif" font-size="23" font-weight="800" letter-spacing="1" fill="#ffffff">PLAT.I.T.NKJ</text><text x="256" y="332" text-anchor="middle" font-family="Arial,sans-serif" font-size="20" font-weight="800" fill="#ffffff">STUDION</text></svg>';
       return new Response(icon,{headers:{"Content-Type":"image/svg+xml;charset=UTF-8","Cache-Control":"public, max-age=604800","X-Content-Type-Options":"nosniff"}});
     }
     if (url.pathname === "/manifest.webmanifest" && request.method === "GET") {
@@ -1374,8 +1441,8 @@ export default {
         display: "standalone",
         display_override: ["standalone", "minimal-ui"],
         orientation: "any",
-        background_color: "#07111f",
-        theme_color: "#07111f",
+        background_color: "#ffffff",
+        theme_color: "#1769c2",
         icons: [{src:"/pwa-icon.svg",sizes:"any",type:"image/svg+xml",purpose:"any maskable"}]
       }), {headers:{"Content-Type":"application/manifest+json;charset=UTF-8","Cache-Control":"public, max-age=3600","X-Content-Type-Options":"nosniff"}});
     }
