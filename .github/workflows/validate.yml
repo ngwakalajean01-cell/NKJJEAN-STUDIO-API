@@ -112,6 +112,12 @@ jobs:
       - name: Vérifier la passerelle IA propriétaire et les routes clientes
         run: node tests/studio-ai.test.cjs
 
+      - name: Vérifier la syntaxe des Workers IA privés
+        run: |
+          node --input-type=module --check < ai-engine/Index.ts
+          node --input-type=module --check < model-runtime/Index.ts
+          node -e "for (const f of ['wrangler.jsonc','ai-engine/wrangler.jsonc','model-runtime/wrangler.jsonc']) JSON.parse(require('node:fs').readFileSync(f,'utf8'))"
+
       - name: Vérifier la migration D1 avec SQLite
         run: |
           python3 - <<'PY'
