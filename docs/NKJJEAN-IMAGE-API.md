@@ -87,3 +87,18 @@ Le serveur doit contrôler les fichiers, les formats, les dimensions, la charge 
 `TECHNONKJJEAN (plus tard) → Supabase (relais plus tard) → NKJJEAN-STUDIO API → NKJJEAN AI Engine → NKJJEAN Model Runtime → modèle d'image auto-hébergé`
 
 Aucun changement Supabase n'est inclus dans cette étape. Aucun déploiement ou fusion Production n'est effectué par cette modification.
+
+## Génération depuis l'espace Studio
+
+Le propriétaire du projet peut également utiliser le générateur visuel directement depuis `/studio/{project_id}`, après connexion à son compte NKJJEAN-STUDIO. Les routes de session sont :
+
+- `POST /api/projects/{project_id}/images/generations`
+- `POST /api/projects/{project_id}/images/edits`
+
+Elles appliquent les mêmes limites, quotas et validations que les routes publiques avec clé API. Le formulaire du Studio permet de joindre jusqu'à six photos, de suivre l'état de la demande et d'enregistrer l'image retournée.
+
+## Création du projet dans la plateforme
+
+Dans « Mes projets », le bouton « Créer mon projet NKJJEAN AI » crée un projet préconfiguré nommé « NKJJEAN AI — Génération d'affiches » et ouvre son Studio. Les clés API peuvent ensuite être créées depuis le Studio, onglet « API et activité ».
+
+Ces fonctionnalités créent l'espace de projet et l'interface de génération. Elles ne déploient pas le modèle d'image : tant que le runtime privé n'est pas raccordé à un vrai modèle, une demande de génération retourne explicitement une indisponibilité.
