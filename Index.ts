@@ -522,6 +522,15 @@ body::after{content:"";position:fixed;z-index:9999;bottom:0;left:0;right:0;heigh
 async function studioHandleApi(request, env, url) {
   const path = url.pathname;
   const storageConfigured = studioStorageConfigured(env);
+  // Les API du catalogue et les téléchargements suivent la même règle que les pages :
+  // aucune fiche ni aucun fichier ne sont accessibles sans session active.
+  if (path.startsWith("/api/store/") || path.startsWith("/api/download/")) {
+    if (typeof env.SESSION_SECRET !== "string" || env.SESSION_SECRET.length < 32) {
+      return jsonResponse({error:"Service d'authentification indisponible.",code:"SESSION_SECRET_MISSING"},503);
+    }
+    const catalogUser = await studioGetUser(request, env);
+    if (!catalogUser) return jsonResponse({error:"Connexion requise pour consulter le catalogue ou télécharger un fichier."},401);
+  }
   if (path === "/api/health" && request.method === "GET") {
     let databaseConnected = false;
     if (env.DB) {
