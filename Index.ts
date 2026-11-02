@@ -1271,6 +1271,7 @@ function studioPwaResponse(html, options = {}) {
   headers.set("Content-Type", "text/html;charset=UTF-8");
   headers.set("X-Content-Type-Options", "nosniff");
   const surveillanceApp = options.appType === "surveillance";
+  const homePage = options.appType === "home";
   const appName = surveillanceApp ? "NKJ-SURV-PLAT" : "NKJJEAN-STUDIO";
   const manifestPath = surveillanceApp ? "/nkj-surv-plat/manifest.webmanifest" : "/manifest.webmanifest";
   const iconPath = surveillanceApp ? "/nkj-surv-plat/pwa-icon.svg" : "/pwa-icon.svg";
@@ -1357,7 +1358,7 @@ function studioPwaResponse(html, options = {}) {
 <style id="nkj-unified-layout-style">
 :root{color-scheme:light!important;--bg:#f6f8fa;--line:#d0d7de;--muted:#59636e;--blue:#0969da;--cyan:#0969da}
 *{box-sizing:border-box}html{background:#f6f8fa}
-body{background:#f6f8fa!important;color:#1f2328!important;padding:7px 0 7px 250px!important;min-height:100vh}
+body{background:${homePage ? "#1769d2" : "#f6f8fa"}!important;color:${homePage ? "#ffffff" : "#1f2328"}!important;padding:7px 0 7px 250px!important;min-height:100vh}
 body::before{content:"";position:fixed;z-index:99999;top:0;left:0;right:0;height:7px;background:#f2cf00;pointer-events:none}
 body::after{content:"";position:fixed;z-index:99999;bottom:0;left:0;right:0;height:7px;background:#080808;pointer-events:none}
 a{color:#0969da}header.top{border-bottom:1px solid #d0d7de!important}header.top nav{display:none!important}
@@ -1516,7 +1517,7 @@ self.addEventListener("fetch", event => {
     if (url.pathname === "/" && request.method === "GET") {
       // La réponse conserve le gabarit PWA studioPwaResponse(STUDIO_HOME_HTML) après enrichissement SEO.
       const homeHtml=STUDIO_HOME_HTML.replace("</head>","<link rel=\"canonical\" href=\""+url.origin+"/\"><meta property=\"og:site_name\" content=\"NKJJEAN STUDIO\"><meta property=\"og:type\" content=\"website\"><meta property=\"og:title\" content=\"NKJJEAN STUDIO — Catalogue numérique\"><meta property=\"og:description\" content=\"Applications Android, cours et ressources numériques validés.\"><meta name=\"twitter:card\" content=\"summary\"><script type=\"application/ld+json\">"+JSON.stringify({"@context":"https://schema.org","@type":"WebSite","name":"NKJJEAN STUDIO","description":"Catalogue d'applications Android, de cours et de ressources numériques validés.","url":url.origin+"/"}).replace(/</g,"\\u003c")+"</script></head>");
-      return studioPwaResponse(homeHtml, { headers: { "Cache-Control": "no-store" } });
+      return studioPwaResponse(homeHtml, { appType: "home", headers: { "Cache-Control": "no-store" } });
     }
     if (url.pathname === "/docs" && request.method === "GET") {
       return studioPwaResponse(STUDIO_DOCS_HTML, { headers: { "Cache-Control": "no-store" } });
