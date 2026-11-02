@@ -74,7 +74,7 @@ async function generate(request: Request, env: Env) {
   const imageTask = routePath === "/v1/images/generations" ? "image_generation"
     : (routePath === "/v1/images/edits" ? "image_edit" : "");
   const images = Array.isArray(body.images) ? body.images.slice(0, 6) : [];
-  if (imageTask && (images.length > 6 || images.some((item) => !item || typeof item.data !== "string" || !/^data:image\\/(png|jpeg|webp);base64,[A-Za-z0-9+/=]+$/i.test(item.data)))) {
+  if (imageTask && (images.length > 6 || images.some((item) => !item || typeof item.data !== "string" || !/^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/=]+$/i.test(item.data)))) {
     return json({ success: false, code: "INVALID_REFERENCE_IMAGES", error: "Photos de référence invalides." }, 400);
   }
   if (imageTask === "image_edit" && images.length === 0) {
@@ -142,7 +142,7 @@ async function generate(request: Request, env: Env) {
       const row = item && typeof item === "object" ? item as Record<string, unknown> : {};
       const b64 = text(row.b64_json ?? row.image_base64, 20_000_000);
       const mime = text(row.mime_type, 40) || "image/png";
-      return b64 && /^image\\/(png|jpeg|webp)$/i.test(mime) ? { b64_json: b64, mime_type: mime } : null;
+      return b64 && /^image\/(png|jpeg|webp)$/i.test(mime) ? { b64_json: b64, mime_type: mime } : null;
     }).filter(Boolean).slice(0, 1);
     if (!output.length) return json({ success: false, code: "NKJ_MODEL_EMPTY_IMAGE", error: "Le runtime n'a renvoyé aucune image." }, 502);
     return json({ success: true, images: output, model: text(result.model, 100) || payload.model, request_id: requestId });
