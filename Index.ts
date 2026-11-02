@@ -1350,9 +1350,14 @@ function studioPwaResponse(html, options = {}) {
     <span class="nkjNavMonogram">NKJ</span>
     <span class="nkjNavCaption">PLAT.I.T.NKJ STUDION</span>
   </a>
-  <div class="nkjNavSection">SURVEILLANCE</div>
-  <nav class="nkjNavLinks">
-    <a href="/nkj-surv-plat">Tableau de surveillance</a>
+  <div class="nkjNavSection">ESPACE ADMINISTRATEUR</div>
+  <nav class="nkjNavLinks nkjSurvNav">
+    <button type="button" class="active" data-surv-view="usersPanel">Comptes clients</button>
+    <button type="button" data-surv-view="eventsPanel">Journal des activités</button>
+    <button type="button" data-surv-view="projectsPanel">Projets et quotas</button>
+    <button type="button" data-surv-view="consultIaPanel">CONSULT-IA</button>
+    <button type="button" data-surv-view="userDetailPanel">Fiches clients</button>
+    <button type="button" data-surv-view="messagesPanel">Messages</button>
   </nav>
   <div class="nkjNavSection">CONTACT DIRECT</div>
   <nav class="nkjNavLinks"><a href="https://wa.me/243992049808" target="_blank" rel="noopener">WhatsApp</a><a href="mailto:ngwakalajean01@gmail.com">Gmail</a><a href="tel:+243814620569">Appeler</a></nav>
@@ -1363,12 +1368,14 @@ function studioPwaResponse(html, options = {}) {
     <span class="nkjNavMonogram">NKJ-STU</span>
     <span class="nkjNavCaption">I.T-NKJJEAN</span>
   </a>
-  <div class="nkjNavSection">ESPACE PUBLIC</div>
-  <nav class="nkjNavLinks">
-    <a href="/">Accueil</a><a href="/applications">Applications</a><a href="/cours">Cours</a><a href="/publications">Ressources</a>
-  </nav>
-  <div class="nkjNavSection">ESPACE PERSONNEL</div>
-  <nav class="nkjNavLinks"><a href="/app">Mon espace</a><a href="/docs">Aide et informations</a></nav>
+  <div class="nkjNavSection">VUE D'ENSEMBLE</div>
+  <nav class="nkjNavLinks"><a href="/app">Tableau de bord</a></nav>
+  <div class="nkjNavSection">PRODUITS ET RESSOURCES</div>
+  <div class="nkjNavTree">
+    <details open><summary>Catalogue</summary><a href="/applications">Applications</a></details>
+    <details><summary>Centre de ressources</summary><a href="/cours">Cours</a><a href="/publications">Publications</a></details>
+    <details><summary>Compte et assistance</summary><a href="/app">Mon espace</a><a href="/docs">Documentation et aide</a></details>
+  </div>
   <div class="nkjNavSection">CONTACT DIRECT</div>
   <nav class="nkjNavLinks"><a href="https://wa.me/243992049808" target="_blank" rel="noopener">WhatsApp</a><a href="mailto:ngwakalajean01@gmail.com">Gmail</a><a href="tel:+243814620569">Appeler</a></nav>
   <div class="nkjNavBottom"><span>Plateforme numérique</span><a class="nkjNavAdmin" href="/nkj-surv-plat">Accès administrateur</a></div>
@@ -1389,8 +1396,18 @@ a{color:#0969da}header.top{border-bottom:1px solid #d0d7de!important}header.top 
 #nkjGlobalNavigation .nkjNavCaption{font-size:11px;font-weight:800;letter-spacing:.13em;color:#59636e}
 #nkjGlobalNavigation .nkjNavSection{margin:22px 10px 8px;color:#656d76;font-size:10px;font-weight:900;letter-spacing:.12em}
 #nkjGlobalNavigation .nkjNavLinks{display:grid;gap:4px}
-#nkjGlobalNavigation .nkjNavLinks a{display:flex;padding:10px 11px;border-radius:7px;color:#24292f;font-weight:650}
-#nkjGlobalNavigation .nkjNavLinks a:hover,#nkjGlobalNavigation .nkjNavLinks a:focus-visible{background:#f3f4f6;color:#0969da;outline:none}
+#nkjGlobalNavigation .nkjNavLinks a,#nkjGlobalNavigation .nkjNavLinks button{display:flex;width:100%;padding:10px 11px;border:0;border-radius:7px;background:transparent;color:#24292f;font:650 13px system-ui,sans-serif;text-align:left;text-decoration:none;cursor:pointer}
+#nkjGlobalNavigation .nkjNavLinks a:hover,#nkjGlobalNavigation .nkjNavLinks a:focus-visible,#nkjGlobalNavigation .nkjNavLinks button:hover,#nkjGlobalNavigation .nkjNavLinks button:focus-visible{background:#f3f4f6;color:#0969da;outline:none}
+#nkjGlobalNavigation .nkjNavTree{display:grid;gap:6px}
+#nkjGlobalNavigation .nkjNavTree details{border-radius:7px}
+#nkjGlobalNavigation .nkjNavTree summary{padding:9px 11px;color:#24292f;font-weight:750;font-size:13px;cursor:pointer;list-style:none}
+#nkjGlobalNavigation .nkjNavTree summary::-webkit-details-marker{display:none}
+#nkjGlobalNavigation .nkjNavTree summary:before{content:"›";display:inline-block;width:18px;color:#656d76}
+#nkjGlobalNavigation .nkjNavTree details[open] summary:before{content:"⌄"}
+#nkjGlobalNavigation .nkjNavTree details a{margin-left:18px;padding:8px 10px;font-size:12px}
+#nkjGlobalNavigation .nkjSurvNav button.active{background:#0969da;color:#fff}
+body:has(#nkjGlobalNavigation[aria-label="Navigation NKJ-SURV-PLAT"]) .surv-sidebar{display:none!important}
+body:has(#nkjGlobalNavigation[aria-label="Navigation NKJ-SURV-PLAT"]) .surv-layout{grid-template-columns:minmax(0,1fr)!important}
 #nkjGlobalNavigation .nkjNavBottom{margin-top:auto;padding:15px 10px 7px;border-top:1px solid #d8dee4;color:#656d76;font-size:11px}
 #nkjGlobalNavigation .nkjNavBottom strong{display:block;margin-top:3px;color:#24292f;font-size:12px}
 .wrap{max-width:1320px!important}
