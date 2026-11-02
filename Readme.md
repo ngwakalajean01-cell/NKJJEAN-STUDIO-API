@@ -141,3 +141,5 @@ Ne publiez jamais `SESSION_SECRET`, les mots de passe, les jetons de session ni 
 - Les deux plateformes disposent de leur propre manifeste PWA et de leur propre icône : **NKJ-STU / I.T-NKJJEAN** pour le Studio et **NKJ / PLAT.I.T.NKJ STUDION** pour la surveillance.
 - Le bouton « Installer » lance la demande native lorsqu'elle est prise en charge. Sinon, il affiche les étapes d'installation adaptées au navigateur et à l'appareil.
 - Le service worker ne met pas en cache les routes API ni les pages privées.
+
+La vérification continue aussi de contrôler que le bouton d'installation PWA est présent sur chaque interface.
