@@ -115,7 +115,7 @@ jobs:
       - name: Vérifier la syntaxe des Workers IA privés
         run: |
           npx --yes esbuild@0.25.0 ai-engine/Index.ts --format=esm --outfile=/tmp/nkjjean-ai-engine-check.mjs
-          npx --yes esbuild@0.25.0 model-runtime/Index.ts --loader=ts --format=esm --outfile=/tmp/nkjjean-model-runtime-check.mjs
+          npx --yes esbuild@0.25.0 model-runtime/Index.ts --format=esm --outfile=/tmp/nkjjean-model-runtime-check.mjs
           node -e "for (const f of ['wrangler.jsonc','ai-engine/wrangler.jsonc','model-runtime/wrangler.jsonc']) JSON.parse(require('node:fs').readFileSync(f,'utf8'))"
 
       - name: Vérifier la migration D1 avec SQLite
