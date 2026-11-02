@@ -32,6 +32,40 @@ jobs:
         run: |
           node --input-type=module --check < Index.ts
 
+      - name: Vérifier les contrats du moteur IA auto-hébergé
+        run: |
+          node <<'NODE'
+          const fs = require("node:fs");
+          const assert = require("node:assert/strict");
+          const mainConfig = JSON.parse(fs.readFileSync("wrangler.jsonc", "utf8"));
+          const engineConfig = JSON.parse(fs.readFileSync("ai-engine/wrangler.jsonc", "utf8"));
+          const runtimeConfig = JSON.parse(fs.readFileSync("model-runtime/wrangler.jsonc", "utf8"));
+          const engine = fs.readFileSync("ai-engine/Index.ts", "utf8");
+          const runtime = fs.readFileSync("model-runtime/Index.ts", "utf8");
+
+          assert.ok(mainConfig.services?.some((item) =>
+            item.binding === "NKJ_AI" && item.service === "nkjjean-ai-engine"),
+            "Le Worker principal doit être relié à NKJJEAN AI.");
+          assert.ok(engineConfig.services?.some((item) =>
+            item.binding === "NKJ_MODEL" && item.service === "nkjjean-model-runtime"),
+            "La passerelle IA doit être reliée au runtime privé.");
+          assert.equal(runtimeConfig.name, "nkjjean-model-runtime");
+          assert.ok(engine.includes('"/v1/generate"') && engine.includes("env.NKJ_MODEL.fetch"),
+            "Le contrat de génération interne est absent.");
+          assert.ok(engine.includes("NKJ_MODEL_RUNTIME_NOT_CONNECTED"),
+            "L'absence du runtime doit rester explicitement signalée.");
+          for (const name of ["INFERENCE_ORIGIN", "INFERENCE_TOKEN", "INFERENCE_MODEL"]) {
+            assert.ok(runtime.includes(name), "Configuration runtime absente : " + name);
+          }
+          assert.ok(runtime.includes('"/v1/infer"') &&
+            runtime.includes('"/v1/chat/completions"') &&
+            runtime.includes('Authorization: "Bearer " + token'),
+            "Le relais privé doit utiliser le contrat HTTPS authentifié.");
+          assert.ok(runtime.includes("PRIVATE_INFERENCE_NOT_CONFIGURED"),
+            "L'absence du serveur privé doit rester explicitement signalée.");
+          console.log("Contrats IA vérifiés : liaisons privées, endpoint, authentification et états indisponibles.");
+          NODE
+
       - name: Vérifier l'installation PWA Chrome et la confidentialité hors ligne
         run: |
           node <<'NODE'
