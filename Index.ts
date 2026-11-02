@@ -1328,7 +1328,18 @@ function studioPwaResponse(html, options = {}) {
   window.addEventListener("appinstalled", () => { installPrompt = null; });
 })();
 </script>`;
-  const navigation = `
+  const navigation = surveillanceApp ? `
+<aside id="nkjGlobalNavigation" aria-label="Navigation NKJ-SURV-PLAT">
+  <a class="nkjNavBrand" href="/nkj-surv-plat" aria-label="Accueil NKJ-SURV-PLAT">
+    <span class="nkjNavMonogram">NKJ</span>
+    <span class="nkjNavCaption">PLAT.I.T.NKJ STUDION</span>
+  </a>
+  <div class="nkjNavSection">SURVEILLANCE</div>
+  <nav class="nkjNavLinks">
+    <a href="/nkj-surv-plat">Tableau de surveillance</a>
+  </nav>
+  <div class="nkjNavBottom"><a class="nkjNavAdmin" href="/">Retour à NKJJEAN-STUDIO</a></div>
+</aside>` : `
 <aside id="nkjGlobalNavigation" aria-label="Navigation NKJJEAN-STUDIO">
   <a class="nkjNavBrand" href="/" aria-label="Accueil NKJJEAN STUDIO">
     <span class="nkjNavMonogram">NKJ-STU</span>
@@ -1340,9 +1351,9 @@ function studioPwaResponse(html, options = {}) {
   </nav>
   <div class="nkjNavSection">ESPACE PERSONNEL</div>
   <nav class="nkjNavLinks"><a href="/app">Mon espace</a><a href="/docs">Aide et informations</a></nav>
-  <div class="nkjNavBottom"><span>Plateforme numérique</span><strong>NKJJEAN STUDIO</strong></div>
+  <div class="nkjNavBottom"><span>Plateforme numérique</span><a class="nkjNavAdmin" href="/nkj-surv-plat">Accès administrateur</a></div>
 </aside>`;
-  const navigationStyle = surveillanceApp ? "" : `
+  const navigationStyle = `
 <style id="nkj-unified-layout-style">
 :root{color-scheme:light!important;--bg:#f6f8fa;--line:#d0d7de;--muted:#59636e;--blue:#0969da;--cyan:#0969da}
 *{box-sizing:border-box}html{background:#f6f8fa}
@@ -1380,13 +1391,15 @@ input,textarea,select,.field input,.field textarea,.field select{background:#fff
  #nkjGlobalNavigation .nkjNavSection{margin:10px 7px 5px}
  #nkjGlobalNavigation .nkjNavLinks{display:flex;flex-wrap:wrap;gap:5px}
  #nkjGlobalNavigation .nkjNavLinks a{padding:7px 9px;font-size:12px}
- #nkjGlobalNavigation .nkjNavBottom{display:none}
+ #nkjGlobalNavigation .nkjNavBottom{display:flex;align-items:center;margin-top:8px;padding:8px 7px 2px}
+ #nkjGlobalNavigation .nkjNavBottom span{display:none}
+ #nkjGlobalNavigation .nkjNavBottom .nkjNavAdmin{font-size:12px;padding:7px 9px}
  .wrap{width:calc(100% - 20px)!important;padding-left:0!important;padding-right:0!important}
 }
 </style>`;
   let output = String(html);
   if (output.includes("</head>")) output = output.replace("</head>", navigationStyle + head + "</head>");
-  if (!surveillanceApp && output.includes("<body>")) output = output.replace("<body>", "<body>" + navigation);
+  if (output.includes("<body>")) output = output.replace("<body>", "<body>" + navigation);
   if (output.includes("</body>")) output = output.replace("</body>", script + "</body>");
   return new Response(output, {...options, headers});
 }
