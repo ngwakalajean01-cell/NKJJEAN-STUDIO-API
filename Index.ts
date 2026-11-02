@@ -1407,8 +1407,6 @@ input,textarea,select,.field input,.field textarea,.field select{background:#fff
 .danger{background:#cf222e!important;color:#fff!important}.notice{border-left-color:#0969da!important}
 .message.user{background:#ddf4ff!important;color:#1f2328!important;border-color:#80ccff!important}
 .message.assistant{background:#f6f8fa!important;color:#1f2328!important;border-color:#d0d7de!important}
-body:has(#nkjTopNavigation.nkj-surveillance) .surv-sidebar{display:none!important}
-body:has(#nkjTopNavigation.nkj-surveillance) .surv-layout{grid-template-columns:minmax(0,1fr)!important}
 @media(max-width:700px){body{padding:72px 10px 16px!important}#nkjTopNavigation{padding:7px 10px;gap:9px}#nkjTopNavigation .nkjTopBrand{min-width:0}#nkjTopNavigation .nkjTopBrand strong{font-size:16px}#nkjTopNavigation .nkjTopRight{gap:4px}#nkjTopNavigation .nkjTopRight a{font-size:11px;padding:7px 8px}#nkjMenuPanel{padding:12px}#nkjMenuPanel .nkj-menu-groups{gap:6px}#nkjMenuPanel button{padding:8px 10px;font-size:12px}#nkjMenuPanel .nkj-subnav{gap:7px;padding-top:10px}#nkjMenuPanel .nkj-subnav a,#nkjMenuPanel .nkj-subnav button{font-size:12px;padding:7px 9px}.wrap{width:100%!important;padding-left:0!important;padding-right:0!important}}
 </style>`;
   const navigationScript = `
