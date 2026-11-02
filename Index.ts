@@ -251,7 +251,7 @@ function studioSessionToken(request) {
   const bearer = authorization.match(/^Bearer ([a-f0-9]{64})$/i);
   if (bearer) return bearer[1].toLowerCase();
   const cookie = request.headers.get("Cookie") || "";
-  const sessionCookie = cookie.match(/(?:^|;\\s*)nkj_session=([a-f0-9]{64})(?:;|$)/i);
+  const sessionCookie = cookie.match(/(?:^|;\s*)nkj_session=([a-f0-9]{64})(?:;|$)/i);
   return sessionCookie ? sessionCookie[1].toLowerCase() : null;
 }
 
@@ -1556,7 +1556,7 @@ self.addEventListener("fetch", event => {
       const signedInUser = env.DB && typeof env.SESSION_SECRET === "string" && env.SESSION_SECRET.length >= 32
         ? await studioGetUser(request, env) : null;
       if (signedInUser) return Response.redirect(new URL("/app", url), 302);
-      return studioPwaResponse(STUDIO_AUTH_GATE_HTML, { appType: "home", headers: { "Cache-Control": "no-store" } });
+      return new Response(STUDIO_AUTH_GATE_HTML, {status:200,headers:{"Content-Type":"text/html;charset=UTF-8","Cache-Control":"no-store","X-Content-Type-Options":"nosniff"}});
       // Ancienne page d'accueil publique conservée ci-dessous pour compatibilité interne.
       const homeHtml=STUDIO_HOME_HTML.replace("</head>","<link rel=\"canonical\" href=\""+url.origin+"/\"><meta property=\"og:site_name\" content=\"NKJJEAN STUDIO\"><meta property=\"og:type\" content=\"website\"><meta property=\"og:title\" content=\"NKJJEAN STUDIO — Catalogue numérique\"><meta property=\"og:description\" content=\"Applications Android, cours et ressources numériques validés.\"><meta name=\"twitter:card\" content=\"summary\"><script type=\"application/ld+json\">"+JSON.stringify({"@context":"https://schema.org","@type":"WebSite","name":"NKJJEAN STUDIO","description":"Catalogue d'applications Android, de cours et de ressources numériques validés.","url":url.origin+"/"}).replace(/</g,"\\u003c")+"</script></head>");
       return studioPwaResponse(homeHtml, { appType: "home", headers: { "Cache-Control": "no-store" } });
