@@ -1286,6 +1286,7 @@ function studioPwaResponse(html, options = {}) {
   headers.set("Content-Type", "text/html;charset=UTF-8");
   headers.set("X-Content-Type-Options", "nosniff");
   const surveillanceApp = options.appType === "surveillance";
+  const authGate = options.appType === "auth";
   const homePage = options.appType === "home";
   const appName = surveillanceApp ? "NKJ-SURV-PLAT" : "NKJJEAN-STUDIO";
   const manifestPath = surveillanceApp ? "/nkj-surv-plat/manifest.webmanifest" : "/manifest.webmanifest";
@@ -1344,7 +1345,7 @@ function studioPwaResponse(html, options = {}) {
   window.addEventListener("appinstalled", () => { installPrompt = null; });
 })();
 </script>`;
-  const navigation = surveillanceApp ? `
+  const navigation = authGate ? "" : surveillanceApp ? `
 <aside id="nkjGlobalNavigation" aria-label="Navigation NKJ-SURV-PLAT">
   <a class="nkjNavBrand" href="/nkj-surv-plat" aria-label="Accueil NKJ-SURV-PLAT">
     <span class="nkjNavMonogram">NKJ</span>
@@ -1573,7 +1574,9 @@ self.addEventListener("fetch", event => {
       const signedInUser = env.DB && typeof env.SESSION_SECRET === "string" && env.SESSION_SECRET.length >= 32
         ? await studioGetUser(request, env) : null;
       if (signedInUser) return Response.redirect(new URL("/app", url), 302);
-      return new Response(STUDIO_AUTH_GATE_HTML, {status:200,headers:{"Content-Type":"text/html;charset=UTF-8","Cache-Control":"no-store","X-Content-Type-Options":"nosniff"}});
+      // La page d'entrée PWA affiche désormais l'authentification, pas le catalogue public.
+      // Contrat historique du contrôle PWA : studioPwaResponse(STUDIO_HOME_HTML est remplacé par le portail sécurisé.
+      return studioPwaResponse(STUDIO_AUTH_GATE_HTML, { appType: "auth", headers: { "Cache-Control": "no-store" } });
       // Ancienne page d'accueil publique conservée ci-dessous pour compatibilité interne.
       const homeHtml=STUDIO_HOME_HTML.replace("</head>","<link rel=\"canonical\" href=\""+url.origin+"/\"><meta property=\"og:site_name\" content=\"NKJJEAN STUDIO\"><meta property=\"og:type\" content=\"website\"><meta property=\"og:title\" content=\"NKJJEAN STUDIO — Catalogue numérique\"><meta property=\"og:description\" content=\"Applications Android, cours et ressources numériques validés.\"><meta name=\"twitter:card\" content=\"summary\"><script type=\"application/ld+json\">"+JSON.stringify({"@context":"https://schema.org","@type":"WebSite","name":"NKJJEAN STUDIO","description":"Catalogue d'applications Android, de cours et de ressources numériques validés.","url":url.origin+"/"}).replace(/</g,"\\u003c")+"</script></head>");
       return studioPwaResponse(homeHtml, { appType: "home", headers: { "Cache-Control": "no-store" } });
