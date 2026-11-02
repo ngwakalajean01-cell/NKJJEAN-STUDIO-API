@@ -132,3 +132,12 @@ Les limites sont enregistrées dans `project_quotas`. Les quotas spéciaux reste
 ## Sécurité
 
 Ne publiez jamais `SESSION_SECRET`, les mots de passe, les jetons de session ni les clés API complètes. Les propriétaires ne peuvent consulter et modifier que leurs propres projets et leurs propres fiches d'application.
+
+## Interface unifiée et installation des applications
+
+- NKJJEAN-STUDIO utilise une navigation latérale inspirée des espaces de travail GitHub, adaptée aux écrans d'ordinateur et de téléphone.
+- Son identité visuelle conserve les repères jaune, bleu et noir, avec des surfaces claires et une lecture confortable.
+- NKJ-SURV-PLAT conserve son espace d'administration et sa navigation privée indépendants.
+- Les deux plateformes disposent de leur propre manifeste PWA et de leur propre icône : **NKJ-STU / I.T-NKJJEAN** pour le Studio et **NKJ / PLAT.I.T.NKJ STUDION** pour la surveillance.
+- Le bouton « Installer » lance la demande native lorsqu'elle est prise en charge. Sinon, il affiche les étapes d'installation adaptées au navigateur et à l'appareil.
+- Le service worker ne met pas en cache les routes API ni les pages privées.
