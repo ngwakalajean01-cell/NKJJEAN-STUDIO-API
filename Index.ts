@@ -1360,7 +1360,7 @@ function studioPwaResponse(html, options = {}) {
 <a class="nkjTopBrand" href="${surveillanceApp ? "/nkj-surv-plat" : "/"}"><strong>${surveillanceApp ? "NKJ" : "NKJ-STU"}</strong><small>${surveillanceApp ? "PLAT.I.T.NKJ STUDION" : "I.T-NKJJEAN"}</small></a>
 <div class="nkjTopRight">${surveillanceApp ? "" : '<a href="/app?mode=login">Se connecter</a><a class="nkjCreate" href="/app?mode=register">Créez un compte</a>'}</div>
 <div id="nkjMenuPanel" class="nkj-menu-panel" hidden>
-<div class="nkj-menu-groups">${surveillanceApp ? '<button type="button" data-nav-group="surveillance">Surveillance</button><button type="button" data-nav-group="support">Contact</button>' : '<button type="button" data-nav-group="overview">Vue d’ensemble</button><button type="button" data-nav-group="catalogue">Catalogue</button><button type="button" data-nav-group="workspace">Espace de travail</button><button type="button" data-nav-group="support">Aide et contacts</button>'}</div>
+<div class="nkj-menu-groups">${surveillanceApp ? '<button type="button" data-nav-group="surveillance">Surveillance</button><button type="button" data-nav-group="platforms">Plateformes</button><button type="button" data-nav-group="support">Contact</button>' : '<button type="button" data-nav-group="overview">Vue d’ensemble</button><button type="button" data-nav-group="catalogue">Catalogue</button><button type="button" data-nav-group="workspace">Espace de travail</button><button type="button" data-nav-group="platforms">Plateformes</button><button type="button" data-nav-group="support">Aide et contacts</button>'}</div>
 <div id="nkjSubnav" class="nkj-subnav" aria-live="polite"></div></div></div>`;
   const navigationStyle = authGate ? `
 <style id="nkj-auth-layout-style">
@@ -1409,12 +1409,57 @@ input,textarea,select,.field input,.field textarea,.field select{background:#fff
 .message.assistant{background:#f6f8fa!important;color:#1f2328!important;border-color:#d0d7de!important}
 @media(max-width:700px){body{padding:72px 10px 16px!important}#nkjTopNavigation{padding:7px 10px;gap:9px}#nkjTopNavigation .nkjTopBrand{min-width:0}#nkjTopNavigation .nkjTopBrand strong{font-size:16px}#nkjTopNavigation .nkjTopRight{gap:4px}#nkjTopNavigation .nkjTopRight a{font-size:11px;padding:7px 8px}#nkjMenuPanel{padding:12px}#nkjMenuPanel .nkj-menu-groups{gap:6px}#nkjMenuPanel button{padding:8px 10px;font-size:12px}#nkjMenuPanel .nkj-subnav{gap:7px;padding-top:10px}#nkjMenuPanel .nkj-subnav a,#nkjMenuPanel .nkj-subnav button{font-size:12px;padding:7px 9px}.wrap{width:100%!important;padding-left:0!important;padding-right:0!important}}
 </style>`;
+  const paletteStyle = authGate ? '<style id="nkj-brand-palette-auth">
+html,body,.shell,.main{background:#f2cf00!important;color:#12345a!important}
+body::before{background:#f2cf00!important}body::after{background:#080808!important}
+.intro{background:#1769d2!important;color:#f2cf00!important}.intro p,.intro .small{color:#fff1a8!important}
+.card{background:#1769d2!important;color:#f2cf00!important;border:2px solid #0d4fa8!important}
+.card h2,.card label,.card .small{color:#fff1a8!important}.card input{background:#fff9d6!important;color:#12345a!important}
+.tabs button{background:#f2cf00!important;color:#12345a!important;border:2px solid #1769d2!important}
+.tabs button.active,.submit{background:#1769d2!important;color:#f2cf00!important;border-color:#f2cf00!important}
+.contacts a{color:#fff1a8!important}
+</style>' : '<style id="nkj-brand-palette">
+/* NKJJEAN-STUDIO : fond jaune, éléments bleus */
+body.nkj-studio-theme{background:#f2cf00!important;color:#12345a!important}
+body.nkj-studio-theme .panel,body.nkj-studio-theme .project,body.nkj-studio-theme .stat,body.nkj-studio-theme .card,body.nkj-studio-theme .detail,body.nkj-studio-theme .file,body.nkj-studio-theme .sidebar,body.nkj-studio-theme .conversation,body.nkj-studio-theme .notice,body.nkj-studio-theme .item{background:#1769d2!important;color:#fff1a8!important;border:1px solid #0d4fa8!important;box-shadow:0 2px 5px #12345a22}
+body.nkj-studio-theme h1,body.nkj-studio-theme h2,body.nkj-studio-theme h3{color:#f2cf00!important}
+body.nkj-studio-theme .muted,body.nkj-studio-theme .card p,body.nkj-studio-theme .project p{color:#fff1a8!important}
+body.nkj-studio-theme input,body.nkj-studio-theme textarea,body.nkj-studio-theme select,body.nkj-studio-theme .field input,body.nkj-studio-theme .field textarea,body.nkj-studio-theme .field select{background:#fff9d6!important;color:#12345a!important;border:1px solid #1769d2!important}
+body.nkj-studio-theme .btn{background:#1769d2!important;color:#f2cf00!important;border:1px solid #0d4fa8!important}
+body.nkj-studio-theme .alt,body.nkj-studio-theme .secondary,body.nkj-studio-theme .chip,body.nkj-studio-theme .tab,body.nkj-studio-theme .tabs a{background:#f2cf00!important;color:#12345a!important;border:1px solid #1769d2!important}
+body.nkj-studio-theme .danger{background:#a72e45!important;color:#fff!important}
+body.nkj-studio-theme .message.user{background:#fff1a8!important;color:#12345a!important;border-color:#1769d2!important}
+body.nkj-studio-theme .message.assistant{background:#0d4fa8!important;color:#fff1a8!important;border-color:#f2cf00!important}
+/* NKJ-SURV-PLAT : fond bleu, éléments jaunes */
+body.nkj-surveillance-theme{background:#1769d2!important;color:#fff1a8!important}
+body.nkj-surveillance-theme .panel,body.nkj-surveillance-theme .stat,body.nkj-surveillance-theme .surv-sidebar{background:#f2cf00!important;color:#12345a!important;border:2px solid #0d4fa8!important;box-shadow:0 2px 6px #061d4528}
+body.nkj-surveillance-theme .panel h1,body.nkj-surveillance-theme .panel h2,body.nkj-surveillance-theme .panel h3,body.nkj-surveillance-theme .stat strong,body.nkj-surveillance-theme .surv-sidebar strong{color:#12345a!important}
+body.nkj-surveillance-theme .muted{color:#29466c!important}
+body.nkj-surveillance-theme input,body.nkj-surveillance-theme textarea,body.nkj-surveillance-theme select{background:#fff9d6!important;color:#12345a!important;border:1px solid #1769d2!important}
+body.nkj-surveillance-theme .btn,body.nkj-surveillance-theme .surv-nav button{background:#f2cf00!important;color:#12345a!important;border:1px solid #12345a!important}
+body.nkj-surveillance-theme .surv-nav button.active{background:#080808!important;color:#f2cf00!important;border-color:#f2cf00!important}
+body.nkj-surveillance-theme .alt{background:#1769d2!important;color:#f2cf00!important;border:1px solid #f2cf00!important}
+body.nkj-surveillance-theme .danger{background:#a72e45!important;color:#fff!important}
+body.nkj-surveillance-theme .pill{background:#1769d2!important;color:#f2cf00!important;border:1px solid #12345a}
+body.nkj-surveillance-theme table th{background:#1769d2!important;color:#f2cf00!important}
+body.nkj-surveillance-theme table td{color:#12345a!important;border-bottom:1px solid #d6ad00!important}
+/* Menus et sous-menus */
+#nkjTopNavigation.nkj-studio{background:#1769d2!important;color:#f2cf00!important;border-bottom:2px solid #f2cf00}
+#nkjTopNavigation.nkj-surveillance{background:#f2cf00!important;color:#12345a!important;border-bottom:2px solid #1769d2}
+#nkjTopNavigation .nkjTopBrand strong{color:#f2cf00!important}
+#nkjTopNavigation.nkj-surveillance .nkjTopBrand strong{color:#1769d2!important}
+#nkjMenuPanel{background:#f2cf00!important;color:#12345a!important;border:2px solid #1769d2}
+#nkjTopNavigation.nkj-surveillance #nkjMenuPanel{background:#1769d2!important;color:#f2cf00!important;border-color:#f2cf00}
+#nkjMenuPanel button,#nkjMenuPanel .nkj-subnav a,#nkjMenuPanel .nkj-subnav button{background:#1769d2!important;color:#f2cf00!important;border:1px solid #0d4fa8}
+#nkjTopNavigation.nkj-surveillance #nkjMenuPanel button,#nkjTopNavigation.nkj-surveillance #nkjMenuPanel .nkj-subnav a,#nkjTopNavigation.nkj-surveillance #nkjMenuPanel .nkj-subnav button{background:#f2cf00!important;color:#12345a!important;border-color:#f2cf00}
+#nkjMenuPanel button[aria-pressed=true],#nkjMenuPanel .nkj-subnav a:hover,#nkjMenuPanel .nkj-subnav button:hover{background:#080808!important;color:#f2cf00!important;border-color:#f2cf00}
+</style>';
   const navigationScript = `
 <script id="nkj-global-navigation-script">
-(()=>{const root=document.getElementById("nkjTopNavigation");if(!root)return;const toggle=document.getElementById("nkjMenuToggle"),panel=document.getElementById("nkjMenuPanel"),sub=document.getElementById("nkjSubnav");if(!toggle||!panel||!sub)return;const groups={overview:[["Accueil","/"],["Tableau de bord","/app"]],catalogue:[["Applications","/applications"],["Cours","/cours"],["Publications","/publications"]],workspace:[["Créer un compte","/app?mode=register"],["Se connecter","/app?mode=login"],["Mes projets","/app"],["Messagerie — reçus et envoyés","/app#messagesSection"]],support:[["Documentation et aide","/docs"],["WhatsApp","https://wa.me/243992049808"],["Appeler","tel:+243815648335"],["Gmail","mailto:ngwakalajean01@gmail.com"]],surveillance:[["Comptes clients","usersPanel"],["Journal des activités","eventsPanel"],["Projets et quotas","projectsPanel"],["CONSULT-IA","consultIaPanel"],["Fiches clients","userDetailPanel"],["Messages","messagesPanel"]]};toggle.addEventListener("click",()=>{const open=panel.hidden;panel.hidden=!open;toggle.setAttribute("aria-expanded",String(open));if(open)show(root.classList.contains("nkj-surveillance")?"surveillance":"overview");});function show(key){sub.replaceChildren();root.querySelectorAll("[data-nav-group]").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.navGroup===key)));(groups[key]||[]).forEach(([label,target])=>{let el;if(key==="surveillance"){el=document.createElement("button");el.type="button";el.dataset.survView=target;el.addEventListener("click",()=>{document.querySelectorAll("[data-surv-view]").forEach(b=>b.classList.toggle("active",b.dataset.survView===target));document.querySelectorAll(".surv-panel").forEach(p=>p.classList.toggle("hidden",p.id!==target));});}else{el=document.createElement("a");el.href=target;if(target.startsWith("http")){el.target="_blank";el.rel="noopener";}}el.textContent=label;sub.appendChild(el);});}root.querySelectorAll("[data-nav-group]").forEach(b=>b.addEventListener("click",()=>show(b.dataset.navGroup)));document.addEventListener("click",e=>{if(!root.contains(e.target)){panel.hidden=true;toggle.setAttribute("aria-expanded","false");}});document.addEventListener("keydown",e=>{if(e.key==="Escape"){panel.hidden=true;toggle.setAttribute("aria-expanded","false");}});})();
+(()=>{const root=document.getElementById("nkjTopNavigation");if(!root)return;document.body.classList.add(root.classList.contains("nkj-surveillance")?"nkj-surveillance-theme":"nkj-studio-theme");const toggle=document.getElementById("nkjMenuToggle"),panel=document.getElementById("nkjMenuPanel"),sub=document.getElementById("nkjSubnav");if(!toggle||!panel||!sub)return;const groups={overview:[["Accueil","/"],["Tableau de bord","/app"]],catalogue:[["Applications","/applications"],["Cours","/cours"],["Publications","/publications"]],workspace:[["Créer un compte","/app?mode=register"],["Se connecter","/app?mode=login"],["Mes projets","/app"],["Messagerie — reçus et envoyés","/app#messagesSection"]],platforms:[["NKJ-SURV-PLAT","/nkj-surv-plat"],["NKJJEAN-STUDIO","/app"]],support:[["Documentation et aide","/docs"],["WhatsApp","https://wa.me/243992049808"],["Appeler","tel:+243815648335"],["Gmail","mailto:ngwakalajean01@gmail.com"]],surveillance:[["Comptes clients","usersPanel"],["Journal des activités","eventsPanel"],["Projets et quotas","projectsPanel"],["CONSULT-IA","consultIaPanel"],["Fiches clients","userDetailPanel"],["Messages reçus et envoyés","messagesPanel"]]};toggle.addEventListener("click",()=>{const open=panel.hidden;panel.hidden=!open;toggle.setAttribute("aria-expanded",String(open));if(open)show(root.classList.contains("nkj-surveillance")?"surveillance":"overview");});function show(key){sub.replaceChildren();root.querySelectorAll("[data-nav-group]").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.navGroup===key)));(groups[key]||[]).forEach(([label,target])=>{let el;if(key==="surveillance"){el=document.createElement("button");el.type="button";el.dataset.survView=target;el.addEventListener("click",()=>{document.querySelectorAll("[data-surv-view]").forEach(b=>b.classList.toggle("active",b.dataset.survView===target));document.querySelectorAll(".surv-panel").forEach(p=>p.classList.toggle("hidden",p.id!==target));});}else{el=document.createElement("a");el.href=target;if(target.startsWith("http")){el.target="_blank";el.rel="noopener";}}el.textContent=label;sub.appendChild(el);});}root.querySelectorAll("[data-nav-group]").forEach(b=>b.addEventListener("click",()=>show(b.dataset.navGroup)));document.addEventListener("click",e=>{if(!root.contains(e.target)){panel.hidden=true;toggle.setAttribute("aria-expanded","false");}});document.addEventListener("keydown",e=>{if(e.key==="Escape"){panel.hidden=true;toggle.setAttribute("aria-expanded","false");}});})();
 </script>`;
   let output = String(html);
-  if (output.includes("</head>")) output = output.replace("</head>", navigationStyle + head + "</head>");
+  if (output.includes("</head>")) output = output.replace("</head>", navigationStyle + paletteStyle + head + "</head>");
   if (output.includes("<body>")) output = output.replace("<body>", "<body>" + navigation);
   if (output.includes("</body>")) output = output.replace("</body>", script + navigationScript + "</body>");
   return new Response(output, {...options, headers});
