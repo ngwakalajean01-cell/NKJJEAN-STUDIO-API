@@ -971,6 +971,20 @@ async function studioHandleApi(request, env, url) {
       const result=await env.DB.prepare("SELECT id,api_key_id,endpoint,requests_count,input_tokens,output_tokens,status_code,created_at FROM usage_logs WHERE project_id=? ORDER BY created_at DESC LIMIT 100").bind(projectId).all();
       return jsonResponse({success:true,usage:result.results||[]});
     }
+    if (parts.length === 5 && parts[3] === "images" && ["generations","edits"].includes(parts[4]) && request.method === "POST") {
+      const size=Number(request.headers.get("Content-Length")||"0");
+      if(size>28*1024*1024)return jsonResponse({success:false,error:"La requête dépasse 28 Mio.",code:"IMAGE_PAYLOAD_TOO_LARGE"},413);
+      let body;
+      try{body=await request.json();if(!body||typeof body!=="object"||Array.isArray(body))throw new Error();}
+      catch(error){return jsonResponse({success:false,error:"Corps JSON invalide.",code:"INVALID_JSON"},400);}
+      const result=await studioGenerateImageWithOwnAI(env,{
+        projectId,userId:user.id,apiKeyId:null,
+        mode:parts[4]==="edits"?"edit":"generate",
+        prompt:body.prompt,images:body.images,size:body.size,style:body.style
+      });
+      return jsonResponse(result,result.success?200:(result.status||503));
+    }
+
     if (parts.length === 4 && parts[3] === "conversations" &&
         (request.method === "GET" || request.method === "POST")) {
       if (!(await studioWorkspaceReady(env))) return jsonResponse({error:"Espace de conversation non initialisé. Exécutez migrations/0002_project_workspace.sql dans la base D1."},503);
