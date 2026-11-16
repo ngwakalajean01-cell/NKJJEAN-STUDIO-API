@@ -777,7 +777,7 @@ async function studioHandleApi(request, env, url) {
 
     if (path === "/api/surveillance/external-videos" && request.method === "GET") {
       if (typeof env.SUPABASE_URL !== "string" || typeof env.SUPABASE_SERVICE_ROLE_KEY !== "string") return jsonResponse({error:"Catalogue vidéo Supabase non configuré."},503);
-      const base=env.SUPABASE_URL.trim().replace(/\\/+$/,"");
+      const base=env.SUPABASE_URL.trim().replace(/\/+$/,"");
       const response=await fetch(base+"/rest/v1/community_external_videos?select=id,source,source_url,embed_url,title,description,category,moderation_status,content_rating,is_active,created_at,published_at&order=created_at.desc&limit=200",{headers:{apikey:env.SUPABASE_SERVICE_ROLE_KEY,Authorization:"Bearer "+env.SUPABASE_SERVICE_ROLE_KEY}});
       if(!response.ok)return jsonResponse({error:"Impossible de charger le catalogue vidéo."},502);
       return jsonResponse({success:true,videos:await response.json()});
@@ -790,12 +790,12 @@ async function studioHandleApi(request, env, url) {
       if(parsedUrl.protocol!=="https:"||parsedUrl.username||parsedUrl.password)return jsonResponse({error:"Seuls les liens HTTPS publics sont acceptés."},400);
       const host=parsedUrl.hostname.toLowerCase(),isTikTok=host==="tiktok.com"||host.endsWith(".tiktok.com"),isFacebook=host==="facebook.com"||host.endsWith(".facebook.com")||host==="fb.watch",isYouTube=host==="youtube.com"||host.endsWith(".youtube.com")||host==="youtu.be";
       let embedUrl=null;
-      if(source==="tiktok"&&isTikTok){const videoId=parsedUrl.pathname.match(/\\/video\\/(\\d+)/)?.[1];embedUrl=videoId?"https://www.tiktok.com/player/v1/"+videoId:parsedUrl.toString();}
+      if(source==="tiktok"&&isTikTok){const videoId=parsedUrl.pathname.match(/\/video\/(\d+)/)?.[1];embedUrl=videoId?"https://www.tiktok.com/player/v1/"+videoId:parsedUrl.toString();}
       else if(source==="facebook_reel"&&isFacebook){embedUrl="https://www.facebook.com/plugins/video.php?href="+encodeURIComponent(parsedUrl.toString())+"&show_text=false";}
-      else if(source==="youtube"&&isYouTube){const videoId=host==="youtu.be"?parsedUrl.pathname.split("/").filter(Boolean)[0]:parsedUrl.searchParams.get("v")||parsedUrl.pathname.match(/\\/embed\\/([^/?]+)/)?.[1]||parsedUrl.pathname.match(/\\/shorts\\/([^/?]+)/)?.[1];embedUrl=videoId?"https://www.youtube-nocookie.com/embed/"+encodeURIComponent(videoId):null;}
+      else if(source==="youtube"&&isYouTube){const videoId=host==="youtu.be"?parsedUrl.pathname.split("/").filter(Boolean)[0]:parsedUrl.searchParams.get("v")||parsedUrl.pathname.match(/\/embed\/([^/?]+)/)?.[1]||parsedUrl.pathname.match(/\/shorts\/([^/?]+)/)?.[1];embedUrl=videoId?"https://www.youtube-nocookie.com/embed/"+encodeURIComponent(videoId):null;}
       if(!embedUrl)return jsonResponse({error:"La source ne correspond pas à un lien TikTok, Facebook Reels ou YouTube valide."},400);
       if(title.length<3||!categories.has(category))return jsonResponse({error:"Ajoutez un titre et choisissez une catégorie valide."},400);
-      const base=env.SUPABASE_URL.trim().replace(/\\/+$/,"");
+      const base=env.SUPABASE_URL.trim().replace(/\/+$/,"");
       const response=await fetch(base+"/rest/v1/community_external_videos",{method:"POST",headers:{apikey:env.SUPABASE_SERVICE_ROLE_KEY,Authorization:"Bearer "+env.SUPABASE_SERVICE_ROLE_KEY,"Content-Type":"application/json",Prefer:"return=representation"},body:JSON.stringify({source,source_url:sourceUrl,embed_url:embedUrl,title,description,category,moderation_status:"pending_review",content_rating:"general",is_active:true})});
       const rows=await response.json().catch(()=>null);
       if(!response.ok||!Array.isArray(rows)||!rows.length){const duplicate=JSON.stringify(rows||{}).includes("community_external_videos_unique_source_url");return jsonResponse({error:duplicate?"Cette vidéo est déjà enregistrée.":"Impossible d'enregistrer la vidéo externe."},duplicate?409:502);}
@@ -807,7 +807,7 @@ async function studioHandleApi(request, env, url) {
       const videoId=parts[3],body=await studioReadBody(request),decision=studioText(body.decision,20);
       if(!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(videoId)||!["publish","reject","deactivate"].includes(decision))return jsonResponse({error:"Identifiant ou décision invalide."},400);
       const patch=decision==="publish"?{moderation_status:"published",is_active:true,published_at:new Date().toISOString(),updated_at:new Date().toISOString()}:decision==="reject"?{moderation_status:"rejected",is_active:false,updated_at:new Date().toISOString()}:{is_active:false,updated_at:new Date().toISOString()};
-      const base=env.SUPABASE_URL.trim().replace(/\\/+$/,"");
+      const base=env.SUPABASE_URL.trim().replace(/\/+$/,"");
       const response=await fetch(base+"/rest/v1/community_external_videos?id=eq."+encodeURIComponent(videoId),{method:"PATCH",headers:{apikey:env.SUPABASE_SERVICE_ROLE_KEY,Authorization:"Bearer "+env.SUPABASE_SERVICE_ROLE_KEY,"Content-Type":"application/json",Prefer:"return=representation"},body:JSON.stringify(patch)});
       const rows=await response.json().catch(()=>null);
       if(!response.ok||!Array.isArray(rows)||!rows.length)return jsonResponse({error:"Impossible de modifier cette vidéo."},502);
