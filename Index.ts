@@ -1600,6 +1600,16 @@ export default {
   async fetch(request, env) {
     const url = new URL(request.url);
 
+    // Pont OAuth TikTok : l'URI enregistrée chez TikTok reste sur ce Worker.
+    // Le traitement du code et des jetons est effectué côté serveur par Supabase.
+    const tiktokOAuthEndpoint = "https://piuqudrpitjmvhtlymns.supabase.co/functions/v1/tiktok-oauth";
+    if (request.method === "GET" && url.pathname === "/api/auth/tiktok/connect") {
+      return Response.redirect(tiktokOAuthEndpoint + "/start", 302);
+    }
+    if (request.method === "GET" && url.pathname === "/api/auth/tiktok/callback") {
+      return Response.redirect(tiktokOAuthEndpoint + "/callback" + url.search, 302);
+    }
+
     if (request.method === "OPTIONS") {
       return new Response(null, { status: 204, headers: {
         "Access-Control-Allow-Origin": "*",
